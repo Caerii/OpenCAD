@@ -81,7 +81,7 @@ The result has been a years-long, partially successful effort:
 - Feature reorder — swapping two operations invalidates the naming chain if
   it depends on insertion order rather than geometric semantics.
 
-### 2. Hash-Based Face Tracking (Build123d's Current Partial Solution)
+### 2. Hash-Based Face Tracking
 
 **How it works:**  Each face is fingerprinted by a hash of its geometric
 properties (surface type, normal, centroid, area, bounding UV domain).  After
