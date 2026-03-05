@@ -1,0 +1,39 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Node artifacts
+node_modules/
+opencad_viewport/node_modules/
+opencad_viewport/dist/
+opencad_viewport/.storybook-out/
+package-lock.json
+opencad_viewport/package-lock.json
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# OS/editor noise
+.DS_Store
+.vscode/*.log
+
+# Temporary/runtime files
+*.log
+*.tmp
+*.swp
+*.tsbuildinfo

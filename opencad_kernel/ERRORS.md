@@ -1,0 +1,24 @@
+# OpenCAD Kernel Failure Codes
+
+- `INVALID_INPUT`: Numeric or required arguments are invalid.
+  - Fix: validate dimensions/radius/edge inputs before calling.
+- `SHAPE_NOT_FOUND`: Provided `shape_id` does not exist in the shape store.
+  - Fix: pass a `shape_id` from a previous successful operation.
+- `ZERO_VOLUME`: Shape volume is zero or Boolean result collapsed to zero.
+  - Fix: increase dimensions or reduce subtraction overlap.
+- `BBOX_NO_OVERLAP`: Bounding boxes do not overlap for union/intersection pre-flight.
+  - Fix: move shapes so they intersect in space.
+- `BBOX_NEAR_TANGENT`: Overlap exists but is below tolerance (`1e-6`) and treated as unstable.
+  - Fix: increase overlap or adjust tolerance policy.
+- `NON_MANIFOLD`: Input shape failed manifold pre-flight.
+  - Fix: heal the geometry before Boolean operations.
+- `BOOLEAN_KERNEL_ERROR`: Boolean execution raised an unexpected exception.
+  - Fix: inspect inputs and retry with valid manifold solids.
+- `FILLET_RADIUS_TOO_LARGE`: Requested fillet radius exceeds local shape bounds.
+  - Fix: reduce radius or enlarge the source feature.
+- `OFFSET_COLLAPSE`: Negative offset collapses one or more shape dimensions.
+  - Fix: use a smaller magnitude negative offset.
+- `IO_ERROR`: STEP import/export file read/write failed.
+  - Fix: verify filesystem path and permissions.
+- `UNSUPPORTED_STEP`: File extension is not `.step` or `.stp`.
+  - Fix: provide STEP format input.
