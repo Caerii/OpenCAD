@@ -233,7 +233,9 @@ Part(name="LLM Part")"""
     assert captured["model"] == "openai/gpt-4o-mini"
     messages = captured["messages"]
     assert isinstance(messages, list)
-    assert "examples/hardware_mounting_bracket.py" in messages[0]["content"]
+    system_messages = [message for message in messages if message["role"] == "system"]
+    assert system_messages
+    assert any("examples/hardware_mounting_bracket.py" in message["content"] for message in system_messages)
 
 
 def test_chat_request_requires_model_when_provider_is_set() -> None:

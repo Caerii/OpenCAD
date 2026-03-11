@@ -5,6 +5,8 @@ from typing import Any, Callable
 from opencad_agent.models import ChatHistoryItem
 
 LiteLlmCompletion = Callable[..., Any]
+# Keep code generation near-deterministic by default, but allow a modest bump when
+# the caller enables higher-reasoning responses and wants a bit more variation.
 DEFAULT_CODE_TEMPERATURE = 0.2
 HIGH_REASONING_CODE_TEMPERATURE = 0.5
 
