@@ -25,3 +25,19 @@ python examples/agents/generate_mounting_bracket_code.py > generated_bracket.py
 ```
 
 Provider credentials continue to come from the provider's standard environment variables.
+
+## Claude example
+
+```bash
+export OPENCAD_LLM_PROVIDER=anthropic
+export OPENCAD_LLM_MODEL=claude-3-5-sonnet-latest
+python examples/agents/generate_mounting_bracket_code.py > generated_bracket.py
+```
+
+## Gemini example
+
+```bash
+export OPENCAD_LLM_PROVIDER=gemini
+export OPENCAD_LLM_MODEL=gemini-2.0-flash
+python examples/agents/generate_mounting_bracket_code.py > generated_bracket.py
+```
