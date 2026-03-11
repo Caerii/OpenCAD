@@ -51,7 +51,8 @@ class OpenCadAgentService:
         )
 
     def _generate_code(self, request: ChatRequest) -> str:
-        if request.llm_model:
+        use_llm = request.llm_model is not None
+        if use_llm:
             return self.llm_client.generate_code(
                 provider=request.llm_provider,
                 model=request.llm_model,

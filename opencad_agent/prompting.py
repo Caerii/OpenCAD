@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 from opencad_tree.models import FeatureTree
@@ -34,6 +35,7 @@ def build_system_prompt(tree_state: FeatureTree) -> str:
     )
 
 
+@lru_cache(maxsize=1)
 def _load_example_scripts() -> str:
     examples_dir = Path(__file__).resolve().parents[1] / "examples"
     example_files = [
@@ -46,7 +48,8 @@ def _load_example_scripts() -> str:
         path = examples_dir / filename
         if not path.exists():
             continue
-        snippets.append(f"examples/{filename}:\n```python\n{path.read_text(encoding='utf-8').strip()}\n```")
+        snippet = path.read_text(encoding="utf-8").strip()
+        snippets.append(f"examples/{filename}:\n```python\n{snippet}\n```")
     return "\n\n".join(snippets)
 
 

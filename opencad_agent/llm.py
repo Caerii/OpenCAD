@@ -5,6 +5,8 @@ from typing import Any, Callable
 from opencad_agent.models import ChatHistoryItem
 
 LiteLlmCompletion = Callable[..., Any]
+DEFAULT_CODE_TEMPERATURE = 0.2
+HIGH_REASONING_CODE_TEMPERATURE = 0.5
 
 
 def _default_completion(**kwargs: Any) -> Any:
@@ -39,6 +41,7 @@ def _extract_message_content(response: Any) -> str:
                 parts.append(item["text"])
         if parts:
             return "\n".join(parts)
+        raise ValueError("LLM response content list did not include any text items.")
     raise ValueError("LLM response message did not include text content.")
 
 
@@ -62,6 +65,6 @@ class LiteLlmProvider:
         response = self._completion(
             model=_resolve_model_name(provider, model),
             messages=messages,
-            temperature=0.2 if not reasoning else 0.5,
+            temperature=HIGH_REASONING_CODE_TEMPERATURE if reasoning else DEFAULT_CODE_TEMPERATURE,
         )
         return _extract_message_content(response).strip()

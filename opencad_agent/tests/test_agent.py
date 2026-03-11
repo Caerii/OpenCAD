@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
+import pytest
 
 from opencad_agent.api import app
 from opencad_agent.llm import LiteLlmProvider
 from opencad_agent.models import ChatRequest
+from opencad_agent.planner import OpenCadPlanner
 from opencad_agent.prompting import build_code_generation_prompt, build_system_prompt
 from opencad_agent.service import OpenCadAgentService
 from opencad_agent.tools import ToolRuntime
@@ -45,6 +47,20 @@ def test_code_generation_prompt_contains_example_scripts() -> None:
     assert "Return only valid Python code." in prompt
     assert "examples/hardware_mounting_bracket.py" in prompt
     assert "from opencad import Part, Sketch" in prompt
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("Generate a mounting bracket script", "Generated Mounting Bracket"),
+        ("Generate a PCB carrier script", "Generated PCB Carrier"),
+        ("Generate a simple part", "Generated Part"),
+    ],
+)
+def test_planner_generate_code_returns_example_style_scripts(message: str, expected: str) -> None:
+    code = OpenCadPlanner().generate_code(message)
+    assert "from opencad import Part, Sketch" in code
+    assert expected in code
 
 
 def test_mounting_bracket_prompt_generates_minimum_operations() -> None:
@@ -183,6 +199,9 @@ def test_tool_runtime_supports_in_process_kernel_calls() -> None:
 
 def test_service_can_generate_code_with_litellm_provider() -> None:
     captured: dict[str, object] = {}
+    expected_code = """from opencad import Part, Sketch
+
+Part(name="LLM Part")"""
 
     def fake_completion(**kwargs: object) -> dict[str, object]:
         captured.update(kwargs)
@@ -190,7 +209,7 @@ def test_service_can_generate_code_with_litellm_provider() -> None:
             "choices": [
                 {
                     "message": {
-                        "content": "from opencad import Part, Sketch\n\nPart(name=\"LLM Part\")\n",
+                        "content": f"{expected_code}\n",
                     }
                 }
             ]
@@ -210,8 +229,19 @@ def test_service_can_generate_code_with_litellm_provider() -> None:
     )
 
     assert response.operations_executed == []
-    assert response.generated_code == "from opencad import Part, Sketch\n\nPart(name=\"LLM Part\")"
+    assert response.generated_code == expected_code
     assert captured["model"] == "openai/gpt-4o-mini"
     messages = captured["messages"]
     assert isinstance(messages, list)
     assert "examples/hardware_mounting_bracket.py" in messages[0]["content"]
+
+
+def test_chat_request_requires_model_when_provider_is_set() -> None:
+    with pytest.raises(ValueError, match="llm_model is required"):
+        ChatRequest(
+            message="Generate a mounting bracket script",
+            tree_state=_seed_tree(),
+            conversation_history=[],
+            llm_provider="openai",
+            generate_code=True,
+        )
