@@ -202,6 +202,13 @@ body {
   margin: 0;
 }
 
+.chat-options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .reasoning-toggle {
   font-size: 0.78rem;
   display: flex;

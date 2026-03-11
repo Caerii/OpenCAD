@@ -1,13 +1,13 @@
 import axios from "axios";
 import { mockChat, mockSolveSketch } from "../mock/mockData";
-import type { ChatResponsePayload, FeatureTreeView, MeshPayload, SketchPayload, SolverResult } from "../types";
-
-interface ChatRequest {
-  message: string;
-  tree_state: FeatureTreeView;
-  conversation_history: Array<{ role: string; content: string }>;
-  reasoning?: boolean;
-}
+import type {
+  ChatRequestPayload,
+  ChatResponsePayload,
+  FeatureTreeView,
+  MeshPayload,
+  SketchPayload,
+  SolverResult,
+} from "../types";
 
 /** A single SSE mesh chunk from the kernel streaming endpoint. */
 export interface MeshStreamChunk {
@@ -43,7 +43,7 @@ export class OpenCadApiClient {
     return response.data;
   }
 
-  async sendChat(request: ChatRequest): Promise<ChatResponsePayload> {
+  async sendChat(request: ChatRequestPayload): Promise<ChatResponsePayload> {
     if (this.useMock) {
       const mock = await mockChat(request.message, Boolean(request.reasoning));
       return {

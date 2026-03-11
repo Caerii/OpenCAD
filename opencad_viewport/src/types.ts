@@ -99,6 +99,21 @@ export interface ChatOperationExecution {
   result: Record<string, unknown>;
 }
 
+export type ChatRole = "system" | "user" | "assistant";
+
+export interface ChatHistoryItem {
+  role: ChatRole;
+  content: string;
+}
+
+export interface ChatRequestPayload {
+  message: string;
+  tree_state: FeatureTreeView;
+  conversation_history: ChatHistoryItem[];
+  reasoning?: boolean;
+  generate_code?: boolean;
+}
+
 export interface ChatResponsePayload {
   response: string;
   operations_executed: ChatOperationExecution[];

@@ -46,12 +46,10 @@ export default function App(): JSX.Element {
       </main>
 
       <ChatPanel
-        onSend={async (message, reasoning) => {
+        onSend={async (request) => {
           const response = await api.sendChat({
-            message,
+            ...request,
             tree_state: tree,
-            conversation_history: [],
-            reasoning
           });
           setTree(response.new_tree_state);
           return {
