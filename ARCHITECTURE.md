@@ -73,8 +73,12 @@ This allows local component development without running backend services.
     - `tree_state: FeatureTree`
     - `conversation_history: []`
     - `reasoning: bool`
+    - `llm_provider: str | null` (optional, for LiteLLM-backed code generation)
+    - `llm_model: str | null` (optional, for LiteLLM-backed code generation)
+    - `generate_code: bool` (optional, returns example-style Python instead of executing tools)
   - Output:
     - `response: str`
+    - `generated_code: str | null`
     - `operations_executed: []`
     - `new_tree_state: FeatureTree`
 
@@ -85,6 +89,7 @@ This allows local component development without running backend services.
     - current tree state
     - available operation schemas
     - naming and validation instructions
+    - example-script references for code generation
 - `tools.py`
   - Tool runtime for:
     - `add_sketch`
@@ -99,6 +104,7 @@ This allows local component development without running backend services.
   - Includes a mission prompt path for mounting bracket generation (8+ operations)
 - `service.py`
   - Request orchestration and response assembly
+  - Optional LiteLLM-backed code generation path for multi-provider responses
 
 ## Cross-Service Integration
 

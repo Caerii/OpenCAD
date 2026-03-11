@@ -47,6 +47,7 @@ Install optional integrations as needed, for example:
 
 ```bash
 pip install -e ".[full]"
+pip install -e ".[llm]"
 ```
 
 ### 2. Start backend services
@@ -144,6 +145,11 @@ python -m opencad.cli run examples/hardware_mounting_bracket.py \
   --export bracket.step \
   --tree-output bracket-tree.json
 ```
+
+The agent service can also generate example-style Python scripts for different LLM providers
+through LiteLLM by posting `llm_provider`, `llm_model`, and `generate_code=true` to `/chat`.
+When `generate_code` is enabled, the response includes `generated_code` and leaves the feature
+tree unchanged.
 
 ## Documentation
 

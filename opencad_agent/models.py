@@ -17,6 +17,9 @@ class ChatRequest(BaseModel):
     tree_state: FeatureTree
     conversation_history: list[ChatHistoryItem] = Field(default_factory=list)
     reasoning: bool = False
+    llm_provider: str | None = None
+    llm_model: str | None = None
+    generate_code: bool = False
 
 
 class OperationExecution(BaseModel):
@@ -28,5 +31,6 @@ class OperationExecution(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+    generated_code: str | None = None
     operations_executed: list[OperationExecution] = Field(default_factory=list)
     new_tree_state: FeatureTree
