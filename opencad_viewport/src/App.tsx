@@ -7,6 +7,8 @@ import { Viewport3D } from "./components/Viewport3D";
 import { mockFeatureTree, mockMeshes, mockSketch } from "./mock/mockData";
 import type { ChatOperationExecution, FeatureNodeView, FeatureTreeView, MeshPayload, SketchPayload } from "./types";
 
+const FALLBACK_MESH_Y_OFFSET_SCALE = 0.35;
+
 function getLatestGeneratedNodeId(
   previousTree: FeatureTreeView,
   nextTree: FeatureTreeView,
@@ -43,7 +45,7 @@ function createFallbackMesh(node: FeatureNodeView, index: number): MeshPayload {
         return value + offset;
       }
       if (vertexIndex % 3 === 1) {
-        return value + offset * 0.35;
+        return value + offset * FALLBACK_MESH_Y_OFFSET_SCALE;
       }
       return value;
     }),
@@ -62,6 +64,7 @@ export default function App(): JSX.Element {
   const selectedShapeId = tree.nodes[selectedNodeId]?.shape_id ?? null;
   const selectedNode = tree.nodes[selectedNodeId] ?? null;
   const sketchMode = Boolean(selectedNode?.sketch_id) || selectedNode?.operation === "add_sketch";
+  const loadedShapeIds = useMemo(() => new Set(meshes.map((mesh) => mesh.shapeId)), [meshes]);
 
   useEffect(() => {
     const missingShapeNodes = Object.values(tree.nodes).filter(
@@ -69,7 +72,7 @@ export default function App(): JSX.Element {
         node.status === "built"
         && !node.suppressed
         && Boolean(node.shape_id)
-        && !meshes.some((mesh) => mesh.shapeId === node.shape_id),
+        && !loadedShapeIds.has(node.shape_id as string),
     );
 
     if (missingShapeNodes.length === 0) {
@@ -100,7 +103,7 @@ export default function App(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [api, meshes, tree]);
+  }, [api, loadedShapeIds, tree]);
 
   return (
     <div className="app-shell">
