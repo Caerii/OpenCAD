@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import runpy
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 import pytest
 
@@ -14,6 +17,8 @@ from opencad_kernel.core.models import Success
 from opencad_kernel.operations.handlers import OpenCadKernel
 from opencad_kernel.operations.registry import OperationRegistry
 from opencad_tree.models import FeatureNode, FeatureTree
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _seed_tree() -> FeatureTree:
@@ -247,3 +252,17 @@ def test_chat_request_requires_model_when_provider_is_set() -> None:
             llm_provider="openai",
             generate_code=True,
         )
+
+
+def test_agent_example_script_runs_with_deterministic_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.delenv("OPENCAD_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("OPENCAD_LLM_MODEL", raising=False)
+
+    runpy.run_path(str(REPO_ROOT / "examples" / "agents" / "generate_mounting_bracket_code.py"), run_name="__main__")
+
+    output = capsys.readouterr().out
+    assert "from opencad import Part, Sketch" in output
+    assert "Generated Mounting Bracket" in output
