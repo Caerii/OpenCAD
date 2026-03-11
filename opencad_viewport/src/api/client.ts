@@ -24,15 +24,18 @@ export class OpenCadApiClient {
   private readonly baseUrl: string;
   private readonly kernelUrl: string;
   private readonly useMock: boolean;
+  private readonly useChatMock: boolean;
 
   constructor(
     baseUrl = "http://127.0.0.1:8003",
     kernelUrl = "http://127.0.0.1:8000",
     useMock = import.meta.env.VITE_USE_MOCK !== "false",
+    useChatMock = import.meta.env.VITE_USE_CHAT_MOCK === "true",
   ) {
     this.baseUrl = baseUrl;
     this.kernelUrl = kernelUrl;
     this.useMock = useMock;
+    this.useChatMock = useChatMock;
   }
 
   async solveSketch(sketch: SketchPayload): Promise<SolverResult> {
@@ -44,7 +47,7 @@ export class OpenCadApiClient {
   }
 
   async sendChat(request: ChatRequestPayload): Promise<ChatResponsePayload> {
-    if (this.useMock) {
+    if (this.useChatMock) {
       const mock = await mockChat(request.message, Boolean(request.reasoning));
       return {
         response: mock.response,

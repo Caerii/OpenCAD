@@ -42,8 +42,8 @@
 
 ### Mock-First Development
 
-The viewport client (`src/api/client.ts`) defaults to mock mode via `VITE_USE_MOCK`.
-This allows local component development without running backend services.
+The viewport client (`src/api/client.ts`) defaults viewport geometry/solver flows to mock mode via `VITE_USE_MOCK`.
+Chat uses the live agent service by default, with an opt-in mocked chat path via `VITE_USE_CHAT_MOCK=true`.
 
 ### Storybook Coverage
 
