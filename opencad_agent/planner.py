@@ -213,3 +213,56 @@ class OpenCadPlanner:
         )
 
         return operations
+
+    def generate_code(self, message: str) -> str:
+        lowered = message.lower()
+        if "mounting bracket" in lowered:
+            return (
+                '"""Generated OpenCAD example: mounting bracket with fastener holes."""\n\n'
+                "from opencad import Part, Sketch\n\n\n"
+                "bracket_profile = (\n"
+                '    Sketch(name="Generated Bracket Profile")\n'
+                "    .rect(80, 30)\n"
+                "    .circle(3, center=(8, 8), subtract=True)\n"
+                "    .circle(3, center=(72, 8), subtract=True)\n"
+                "    .circle(3, center=(8, 22), subtract=True)\n"
+                "    .circle(3, center=(72, 22), subtract=True)\n"
+                "    .circle(5, center=(40, 15), subtract=True)\n"
+                ")\n\n"
+                'Part(name="Generated Mounting Bracket").extrude(\n'
+                "    bracket_profile,\n"
+                "    depth=4,\n"
+                '    name="Bracket Body",\n'
+                ').fillet(edges="top", radius=0.75, name="Bracket Edge Relief")\n'
+            )
+
+        if "pcb" in lowered or "carrier" in lowered:
+            return (
+                '"""Generated OpenCAD example: PCB carrier plate."""\n\n'
+                "from opencad import Part, Sketch\n\n\n"
+                "carrier_profile = (\n"
+                '    Sketch(name="Generated PCB Carrier Profile")\n'
+                "    .rect(90, 60)\n"
+                "    .circle(2.2, center=(8, 8), subtract=True)\n"
+                "    .circle(2.2, center=(82, 8), subtract=True)\n"
+                "    .circle(2.2, center=(8, 52), subtract=True)\n"
+                "    .circle(2.2, center=(82, 52), subtract=True)\n"
+                "    .circle(7, center=(45, 30), subtract=True)\n"
+                ")\n\n"
+                'Part(name="Generated PCB Carrier").extrude(\n'
+                "    carrier_profile,\n"
+                "    depth=3,\n"
+                '    name="Carrier Plate",\n'
+                ').offset(0.4, name="Carrier Reinforcement")\n'
+            )
+
+        return (
+            '"""Generated OpenCAD example: simple extruded part."""\n\n'
+            "from opencad import Part, Sketch\n\n\n"
+            "part_profile = (\n"
+            '    Sketch(name="Generated Profile")\n'
+            "    .rect(30, 20)\n"
+            "    .circle(4, center=(15, 10), subtract=True)\n"
+            ")\n\n"
+            'Part(name="Generated Part").extrude(part_profile, depth=8, name="Part Body")\n'
+        )

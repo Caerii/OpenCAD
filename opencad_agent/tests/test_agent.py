@@ -1,16 +1,24 @@
 from __future__ import annotations
 
+import runpy
+from pathlib import Path
+
 from fastapi.testclient import TestClient
+import pytest
 
 from opencad_agent.api import app
+from opencad_agent.llm import LiteLlmProvider
 from opencad_agent.models import ChatRequest
-from opencad_agent.prompting import build_system_prompt
+from opencad_agent.planner import OpenCadPlanner
+from opencad_agent.prompting import build_code_generation_prompt, build_system_prompt
 from opencad_agent.service import OpenCadAgentService
 from opencad_agent.tools import ToolRuntime
 from opencad_kernel.core.models import Success
 from opencad_kernel.operations.handlers import OpenCadKernel
 from opencad_kernel.operations.registry import OperationRegistry
 from opencad_tree.models import FeatureNode, FeatureTree
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _seed_tree() -> FeatureTree:
@@ -37,6 +45,27 @@ def test_system_prompt_contains_required_instructions() -> None:
     assert "always name features descriptively" in prompt
     assert "verify shapes exist and are not suppressed before referencing them" in prompt
     assert "plan the full sequence before executing" in prompt
+
+
+def test_code_generation_prompt_contains_example_scripts() -> None:
+    prompt = build_code_generation_prompt(_seed_tree())
+    assert "Return only valid Python code." in prompt
+    assert "examples/hardware_mounting_bracket.py" in prompt
+    assert "from opencad import Part, Sketch" in prompt
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("Generate a mounting bracket script", "Generated Mounting Bracket"),
+        ("Generate a PCB carrier script", "Generated PCB Carrier"),
+        ("Generate a simple part", "Generated Part"),
+    ],
+)
+def test_planner_generate_code_returns_example_style_scripts(message: str, expected: str) -> None:
+    code = OpenCadPlanner().generate_code(message)
+    assert "from opencad import Part, Sketch" in code
+    assert expected in code
 
 
 def test_mounting_bracket_prompt_generates_minimum_operations() -> None:
@@ -102,6 +131,26 @@ def test_chat_api_round_trip() -> None:
     assert body["new_tree_state"]["root_id"] == "root"
 
 
+def test_chat_api_can_return_generated_code() -> None:
+    client = TestClient(app)
+    payload = {
+        "message": "Generate a mounting bracket script",
+        "tree_state": _seed_tree().model_dump(),
+        "conversation_history": [],
+        "reasoning": False,
+        "generate_code": True,
+    }
+
+    response = client.post("/chat", json=payload)
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["operations_executed"] == []
+    assert body["generated_code"].startswith('"""Generated OpenCAD example')
+    assert "from opencad import Part, Sketch" in body["generated_code"]
+    assert body["new_tree_state"]["root_id"] == "root"
+
+
 def test_healthz() -> None:
     client = TestClient(app)
     response = client.get("/healthz")
@@ -151,3 +200,78 @@ def test_tool_runtime_supports_in_process_kernel_calls() -> None:
     assert shape_id is not None
     assert not shape_id.startswith("shape-")
     assert shape_id.startswith("extrude-") or shape_id.startswith("box-")
+
+
+def test_service_can_generate_code_with_litellm_provider() -> None:
+    captured: dict[str, object] = {}
+    expected_code = """from opencad import Part, Sketch
+
+Part(name="LLM Part")"""
+
+    def fake_completion(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": f"{expected_code}\n",
+                    }
+                }
+            ]
+        }
+
+    service = OpenCadAgentService(llm_client=LiteLlmProvider(completion_func=fake_completion))
+    response = service.chat(
+        ChatRequest(
+            message="Generate a PCB carrier script",
+            tree_state=_seed_tree(),
+            conversation_history=[],
+            reasoning=True,
+            llm_provider="openai",
+            llm_model="gpt-4o-mini",
+            generate_code=True,
+        )
+    )
+
+    assert response.operations_executed == []
+    assert response.generated_code == expected_code
+    assert captured["model"] == "openai/gpt-4o-mini"
+    messages = captured["messages"]
+    assert isinstance(messages, list)
+    system_messages = [message for message in messages if message["role"] == "system"]
+    assert system_messages
+    assert any("examples/hardware_mounting_bracket.py" in message["content"] for message in system_messages)
+
+
+def test_chat_request_requires_model_when_provider_is_set() -> None:
+    with pytest.raises(ValueError, match="llm_model is required"):
+        ChatRequest(
+            message="Generate a mounting bracket script",
+            tree_state=_seed_tree(),
+            conversation_history=[],
+            llm_provider="openai",
+            generate_code=True,
+        )
+
+
+def test_agent_example_script_runs_with_deterministic_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.delenv("OPENCAD_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("OPENCAD_LLM_MODEL", raising=False)
+
+    runpy.run_path(str(REPO_ROOT / "examples" / "agents" / "generate_mounting_bracket_code.py"), run_name="__main__")
+
+    output = capsys.readouterr().out
+    assert "from opencad import Part, Sketch" in output
+    assert "Generated Mounting Bracket" in output
+
+
+def test_agent_examples_readme_includes_claude_and_gemini_commands() -> None:
+    readme = (REPO_ROOT / "examples" / "agents" / "README.md").read_text(encoding="utf-8")
+
+    assert "OPENCAD_LLM_PROVIDER=anthropic" in readme
+    assert "OPENCAD_LLM_MODEL=claude-3-5-sonnet-latest" in readme
+    assert "OPENCAD_LLM_PROVIDER=gemini" in readme
+    assert "OPENCAD_LLM_MODEL=gemini-2.0-flash" in readme

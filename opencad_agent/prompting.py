@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
+from pathlib import Path
 
 from opencad_tree.models import FeatureTree
 
@@ -30,4 +32,40 @@ def build_system_prompt(tree_state: FeatureTree) -> str:
         "Instruction: always name features descriptively.\n"
         "Instruction: verify shapes exist and are not suppressed before referencing them.\n"
         "Instruction: plan the full sequence before executing.\n"
+    )
+
+
+@lru_cache(maxsize=1)
+def _load_example_scripts() -> str:
+    examples_dir = Path(__file__).resolve().parents[1] / "examples"
+    example_files = [
+        "hardware_mounting_bracket.py",
+        "hardware_pcb_carrier.py",
+        "software_hmi_panel.py",
+    ]
+    snippets: list[str] = []
+    for filename in example_files:
+        path = examples_dir / filename
+        if not path.exists():
+            continue
+        snippet = path.read_text(encoding="utf-8").strip()
+        snippets.append(f"examples/{filename}:\n```python\n{snippet}\n```")
+    return "\n\n".join(snippets)
+
+
+def build_code_generation_prompt(tree_state: FeatureTree) -> str:
+    base_prompt = build_system_prompt(tree_state)
+    examples = _load_example_scripts()
+    return (
+        f"{base_prompt}\n"
+        "Generate OpenCAD Python code that matches the concise fluent style used in the repository examples.\n"
+        "Requirements:\n"
+        "- Return only valid Python code.\n"
+        "- Use `from opencad import Part, Sketch`.\n"
+        "- Prefer a named sketch variable followed by a named Part fluent chain.\n"
+        "- Use descriptive names for sketches, parts, and operations.\n"
+        "- Keep the script self-contained and aligned with the examples below.\n"
+        "\n"
+        "Reference examples:\n"
+        f"{examples}\n"
     )

@@ -47,6 +47,7 @@ Install optional integrations as needed, for example:
 
 ```bash
 pip install -e ".[full]"
+pip install -e ".[llm]"
 ```
 
 ### 2. Start backend services
@@ -136,6 +137,7 @@ device-development workflows:
 - `software_hmi_panel.py` — front panel for an operator interface with button and encoder cutouts
 - `firmware_programmer_fixture.py` — pogo-pin fixture plate for programming/debug access
 - `full_device_cable_grommet.py` — concentric cable grommet built from primitive booleans
+- `examples/agents/generate_mounting_bracket_code.py` — agent code-generation usage example
 
 Run an example from the repository root with:
 
@@ -144,6 +146,13 @@ python -m opencad.cli run examples/hardware_mounting_bracket.py \
   --export bracket.step \
   --tree-output bracket-tree.json
 ```
+
+The agent service can also generate example-style Python scripts for different LLM providers
+through LiteLLM by posting `llm_provider`, `llm_model`, and `generate_code=true` to `/chat`.
+When `generate_code` is enabled, the response includes `generated_code` and leaves the feature
+tree unchanged.
+
+For a runnable script example, see [`examples/agents/README.md`](examples/agents/README.md).
 
 ## Documentation
 
