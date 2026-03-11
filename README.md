@@ -27,6 +27,14 @@ scripts/             # Backend smoke tests
 
 ### 1. Install
 
+For a packaged install (for example from a wheel or a PyPI release), use:
+
+```bash
+pip install opencad
+```
+
+For local development from this repository:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
