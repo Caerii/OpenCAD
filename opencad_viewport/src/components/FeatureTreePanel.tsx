@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FeatureNodeView, FeatureTreeView } from "../types";
 
 interface FeatureTreePanelProps {
@@ -53,6 +53,34 @@ export function FeatureTreePanel({ tree, selectedNodeId, onSelectNode }: Feature
   }, [tree.nodes]);
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ [tree.root_id]: true });
+
+  useEffect(() => {
+    if (!selectedNodeId || !tree.nodes[selectedNodeId]) {
+      return;
+    }
+
+    const toExpand = new Set<string>();
+    const visit = (nodeId: string) => {
+      if (toExpand.has(nodeId) || !tree.nodes[nodeId]) {
+        return;
+      }
+      toExpand.add(nodeId);
+      tree.nodes[nodeId].depends_on.forEach(visit);
+    };
+
+    visit(selectedNodeId);
+    setExpanded((current) => {
+      const next = { ...current };
+      let changed = false;
+      toExpand.forEach((nodeId) => {
+        if (!next[nodeId]) {
+          next[nodeId] = true;
+          changed = true;
+        }
+      });
+      return changed ? next : current;
+    });
+  }, [selectedNodeId, tree.nodes]);
 
   const toggle = (nodeId: string) => {
     setExpanded((current) => ({ ...current, [nodeId]: !current[nodeId] }));
