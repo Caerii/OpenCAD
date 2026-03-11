@@ -112,6 +112,25 @@ opencad build model.json --output model.built.json
 opencad run model.py --export output.step --tree-output output-tree.json
 ```
 
+## Examples
+
+The [`examples/`](examples/README.md) directory contains end-to-end scripts for common
+device-development workflows:
+
+- `hardware_mounting_bracket.py` — bracket with fastener and cable pass-through holes
+- `hardware_pcb_carrier.py` — PCB carrier plate with mounting holes and clearance slot
+- `software_hmi_panel.py` — front panel for an operator interface with button and encoder cutouts
+- `firmware_programmer_fixture.py` — pogo-pin fixture plate for programming/debug access
+- `full_device_cable_grommet.py` — concentric cable grommet built from primitive booleans
+
+Run an example from the repository root with:
+
+```bash
+python -m opencad.cli run examples/hardware_mounting_bracket.py \
+  --export bracket.step \
+  --tree-output bracket-tree.json
+```
+
 ## Documentation
 
 - [PRODUCTION.md](PRODUCTION.md) — deployment, routes, and verification
