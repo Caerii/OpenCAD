@@ -29,8 +29,9 @@ Internal implementation details belong in architecture docs or source comments.
 ## Frontend Runtime
 
 - 4 — `opencad_viewport` runs as a separate React app.
-- Mock mode is enabled by default (`VITE_USE_MOCK=true` behavior).
-- Toggle to backend mode by setting `VITE_USE_MOCK=false` and configuring service URLs.
+- Mock geometry/solver mode is enabled by default (`VITE_USE_MOCK=true` behavior).
+- Chat targets the live agent service by default; set `VITE_USE_CHAT_MOCK=true` only when you intentionally want mocked chat responses.
+- Toggle the rest of the viewport to backend mode by setting `VITE_USE_MOCK=false` and configuring service URLs.
 
 ## Runtime Behavior Highlights
 

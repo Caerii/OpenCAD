@@ -1,16 +1,11 @@
 import { useState } from "react";
-import type { ChatOperationExecution } from "../types";
+import type { ChatHistoryItem, ChatOperationExecution, ChatRequestPayload } from "../types";
 
 interface ChatPanelProps {
-  onSend: (message: string, reasoning: boolean) => Promise<{
+  onSend: (request: Omit<ChatRequestPayload, "tree_state">) => Promise<{
     response: string;
     operations: ChatOperationExecution[];
   }>;
-}
-
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -18,10 +13,11 @@ function sleep(ms: number): Promise<void> {
 }
 
 export function ChatPanel({ onSend }: ChatPanelProps): JSX.Element {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatHistoryItem[]>([]);
   const [operations, setOperations] = useState<ChatOperationExecution[]>([]);
   const [input, setInput] = useState("");
   const [reasoning, setReasoning] = useState(false);
+  const [generateCode, setGenerateCode] = useState(false);
   const [pending, setPending] = useState(false);
 
   const submit = async () => {
@@ -32,53 +28,75 @@ export function ChatPanel({ onSend }: ChatPanelProps): JSX.Element {
 
     setPending(true);
     setInput("");
-    setMessages((current) => [...current, { role: "user", content: message }]);
+    const conversationHistory = [...messages, { role: "user", content: message } satisfies ChatHistoryItem];
+    setMessages(conversationHistory);
     setOperations([]);
 
-    const result = await onSend(message, reasoning);
-
-    const assistantMessage: ChatMessage = { role: "assistant", content: "" };
-    setMessages((current) => [...current, assistantMessage]);
-
-    let stream = "";
-    for (const ch of result.response) {
-      stream += ch;
-      setMessages((current) => {
-        const next = [...current];
-        next[next.length - 1] = { role: "assistant", content: stream };
-        return next;
+    try {
+      const result = await onSend({
+        message,
+        conversation_history: conversationHistory,
+        reasoning,
+        generate_code: generateCode,
       });
-      await sleep(9);
-    }
 
-    const shown: ChatOperationExecution[] = [];
-    for (const operation of result.operations) {
-      shown.push(operation);
-      setOperations([...shown]);
-      await sleep(170);
-    }
+      const assistantMessage: ChatHistoryItem = { role: "assistant", content: "" };
+      setMessages((current) => [...current, assistantMessage]);
 
-    setPending(false);
+      let stream = "";
+      for (const ch of result.response) {
+        stream += ch;
+        setMessages((current) => {
+          const next = [...current];
+          next[next.length - 1] = { role: "assistant", content: stream };
+          return next;
+        });
+        await sleep(9);
+      }
+
+      const shown: ChatOperationExecution[] = [];
+      for (const operation of result.operations) {
+        shown.push(operation);
+        setOperations([...shown]);
+        await sleep(170);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to reach the OpenCAD agent.";
+      setMessages((current) => [...current, { role: "assistant", content: message }]);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
     <section className="chat-panel">
       <header className="chat-header">
         <h3>AI Chat</h3>
-        <label className="reasoning-toggle">
-          <input
-            type="checkbox"
-            checked={reasoning}
-            onChange={(event) => setReasoning(event.target.checked)}
-          />
-          High Reasoning
-        </label>
+        <div className="chat-options">
+          <label className="reasoning-toggle">
+            <input
+              type="checkbox"
+              checked={reasoning}
+              onChange={(event) => setReasoning(event.target.checked)}
+            />
+            High Reasoning
+          </label>
+          <label className="reasoning-toggle">
+            <input
+              type="checkbox"
+              checked={generateCode}
+              onChange={(event) => setGenerateCode(event.target.checked)}
+            />
+            Generate Code
+          </label>
+        </div>
       </header>
 
       <div className="chat-messages">
         {messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`chat-message ${message.role}`}>
-            <strong>{message.role === "user" ? "You" : "Agent"}</strong>
+            <strong>{message.role === "user" ? "You" : message.role === "assistant" ? "Agent" : "System"}</strong>
             <p>{message.content}</p>
           </div>
         ))}
@@ -98,7 +116,7 @@ export function ChatPanel({ onSend }: ChatPanelProps): JSX.Element {
         <input
           type="text"
           value={input}
-          placeholder="Describe a feature to build"
+          placeholder={generateCode ? "Describe code for the agent to generate" : "Describe a feature to build"}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {

@@ -1,13 +1,13 @@
 import axios from "axios";
 import { mockChat, mockSolveSketch } from "../mock/mockData";
-import type { ChatResponsePayload, FeatureTreeView, MeshPayload, SketchPayload, SolverResult } from "../types";
-
-interface ChatRequest {
-  message: string;
-  tree_state: FeatureTreeView;
-  conversation_history: Array<{ role: string; content: string }>;
-  reasoning?: boolean;
-}
+import type {
+  ChatRequestPayload,
+  ChatResponsePayload,
+  FeatureTreeView,
+  MeshPayload,
+  SketchPayload,
+  SolverResult,
+} from "../types";
 
 /** A single SSE mesh chunk from the kernel streaming endpoint. */
 export interface MeshStreamChunk {
@@ -24,15 +24,18 @@ export class OpenCadApiClient {
   private readonly baseUrl: string;
   private readonly kernelUrl: string;
   private readonly useMock: boolean;
+  private readonly useChatMock: boolean;
 
   constructor(
     baseUrl = "http://127.0.0.1:8003",
     kernelUrl = "http://127.0.0.1:8000",
     useMock = import.meta.env.VITE_USE_MOCK !== "false",
+    useChatMock = import.meta.env.VITE_USE_CHAT_MOCK === "true",
   ) {
     this.baseUrl = baseUrl;
     this.kernelUrl = kernelUrl;
     this.useMock = useMock;
+    this.useChatMock = useChatMock;
   }
 
   async solveSketch(sketch: SketchPayload): Promise<SolverResult> {
@@ -43,8 +46,8 @@ export class OpenCadApiClient {
     return response.data;
   }
 
-  async sendChat(request: ChatRequest): Promise<ChatResponsePayload> {
-    if (this.useMock) {
+  async sendChat(request: ChatRequestPayload): Promise<ChatResponsePayload> {
+    if (this.useChatMock) {
       const mock = await mockChat(request.message, Boolean(request.reasoning));
       return {
         response: mock.response,

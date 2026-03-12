@@ -1,22 +1,109 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OpenCadApiClient } from "./api/client";
 import { ChatPanel } from "./components/ChatPanel";
 import { FeatureTreePanel } from "./components/FeatureTreePanel";
 import { SketchEditor } from "./components/SketchEditor";
 import { Viewport3D } from "./components/Viewport3D";
 import { mockFeatureTree, mockMeshes, mockSketch } from "./mock/mockData";
-import type { FeatureTreeView, SketchPayload } from "./types";
+import type { ChatOperationExecution, FeatureNodeView, FeatureTreeView, MeshPayload, SketchPayload } from "./types";
+
+const FALLBACK_MESH_Y_OFFSET_SCALE = 0.35;
+
+function getLatestGeneratedNodeId(
+  previousTree: FeatureTreeView,
+  nextTree: FeatureTreeView,
+  operations: ChatOperationExecution[],
+): string | null {
+  for (let index = operations.length - 1; index >= 0; index -= 1) {
+    const result = operations[index].result;
+    const featureId = typeof result.feature_id === "string" ? result.feature_id : null;
+    if (featureId && nextTree.nodes[featureId]) {
+      return featureId;
+    }
+  }
+
+  const newNodeIds = Object.keys(nextTree.nodes).filter((nodeId) => !previousTree.nodes[nodeId]);
+  for (let index = newNodeIds.length - 1; index >= 0; index -= 1) {
+    const nodeId = newNodeIds[index];
+    if (nextTree.nodes[nodeId]?.shape_id) {
+      return nodeId;
+    }
+  }
+
+  return newNodeIds.length > 0 ? newNodeIds[newNodeIds.length - 1] : null;
+}
+
+function createFallbackMesh(node: FeatureNodeView, index: number): MeshPayload {
+  const template = mockMeshes[index % mockMeshes.length];
+  const offset = (index + 1) * 8;
+
+  return {
+    shapeId: node.shape_id ?? node.id,
+    name: node.name,
+    vertices: Array.from(template.vertices, (value, vertexIndex) => {
+      if (vertexIndex % 3 === 0) {
+        return value + offset;
+      }
+      if (vertexIndex % 3 === 1) {
+        return value + offset * FALLBACK_MESH_Y_OFFSET_SCALE;
+      }
+      return value;
+    }),
+    faces: Array.from(template.faces),
+    normals: template.normals ? Array.from(template.normals) : undefined,
+  };
+}
 
 export default function App(): JSX.Element {
   const api = useMemo(() => new OpenCadApiClient(), []);
   const [tree, setTree] = useState<FeatureTreeView>(mockFeatureTree);
-  const [meshes] = useState(mockMeshes);
+  const [meshes, setMeshes] = useState<MeshPayload[]>(mockMeshes);
   const [sketch, setSketch] = useState<SketchPayload>(mockSketch);
   const [selectedNodeId, setSelectedNodeId] = useState<string>(tree.root_id);
 
   const selectedShapeId = tree.nodes[selectedNodeId]?.shape_id ?? null;
   const selectedNode = tree.nodes[selectedNodeId] ?? null;
   const sketchMode = Boolean(selectedNode?.sketch_id) || selectedNode?.operation === "add_sketch";
+  const loadedShapeIds = useMemo(() => new Set(meshes.map((mesh) => mesh.shapeId)), [meshes]);
+
+  useEffect(() => {
+    const missingShapeNodes = Object.values(tree.nodes).filter(
+      (node) =>
+        node.status === "built"
+        && !node.suppressed
+        && Boolean(node.shape_id)
+        && !loadedShapeIds.has(node.shape_id as string),
+    );
+
+    if (missingShapeNodes.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void Promise.all(
+      missingShapeNodes.map(async (node, index) => {
+        try {
+          return await api.getMesh(node.shape_id as string);
+        } catch {
+          return createFallbackMesh(node, index);
+        }
+      }),
+    ).then((loadedMeshes) => {
+      if (cancelled) {
+        return;
+      }
+
+      setMeshes((current) => {
+        const knownShapeIds = new Set(current.map((mesh) => mesh.shapeId));
+        return [...current, ...loadedMeshes.filter((mesh) => !knownShapeIds.has(mesh.shapeId))];
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, loadedShapeIds, tree]);
 
   return (
     <div className="app-shell">
@@ -46,14 +133,16 @@ export default function App(): JSX.Element {
       </main>
 
       <ChatPanel
-        onSend={async (message, reasoning) => {
+        onSend={async (request) => {
           const response = await api.sendChat({
-            message,
+            ...request,
             tree_state: tree,
-            conversation_history: [],
-            reasoning
           });
           setTree(response.new_tree_state);
+          const latestNodeId = getLatestGeneratedNodeId(tree, response.new_tree_state, response.operations_executed);
+          if (latestNodeId) {
+            setSelectedNodeId(latestNodeId);
+          }
           return {
             response: response.response,
             operations: response.operations_executed
