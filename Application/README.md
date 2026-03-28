@@ -1,7 +1,7 @@
 # OpenCAD — Sim-to-Real Gap Correction: Demonstration Simulations
 
 **Authors:** Shreya Priya, Dean Hu
-**Target venue:** CoRL 2026
+
 
 ## Overview
 
