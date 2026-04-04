@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from opencad_kernel.operations.handlers import OpenCadKernel
 from opencad_kernel.operations.registry import OperationRegistry
@@ -9,11 +9,14 @@ from opencad.kernel_adapter import execute_feature_node, registry_result_to_dict
 from opencad_tree.models import FeatureNode, FeatureTree
 from opencad_tree.service import FeatureTreeService
 
+KernelCallFn = Callable[[str, dict[str, Any]], dict[str, Any]]
+
 
 class RuntimeContext:
     """Single-process OpenCAD runtime for headless/fluent usage."""
 
-    def __init__(self, *, id_strategy: str = "readable") -> None:
+    def __init__(self, *, id_strategy: str = "readable", kernel_call_fn: KernelCallFn | None = None) -> None:
+        self._external_kernel_call = kernel_call_fn
         self.kernel = OpenCadKernel(id_strategy=id_strategy)
         self.registry = OperationRegistry(self.kernel)
         self.tree = FeatureTree(root_id="root")
@@ -70,8 +73,12 @@ class RuntimeContext:
         feature_id: str | None = None,
     ) -> tuple[str, str]:
         """Execute a kernel operation and append a built feature node."""
+        print("calling operation: ", operation)
         depends = depends_on or []
-        response = registry_result_to_dict(self.registry, operation, payload)
+        if self._external_kernel_call is not None:
+            response = self._external_kernel_call(operation, payload)
+        else:
+            response = registry_result_to_dict(self.registry, operation, payload)
         if not response.get("ok"):
             raise RuntimeError(f"Operation '{operation}' failed: {response.get('message', 'unknown error')}")
         shape_id = response.get("shape_id")

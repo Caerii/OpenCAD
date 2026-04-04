@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+
+from dotenv import load_dotenv
+
+load_dotenv()
 import json
 import logging
 import os
