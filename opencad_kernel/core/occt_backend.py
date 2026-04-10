@@ -68,6 +68,7 @@ GProp_GProps = None
 TopAbs_EDGE = None
 TopAbs_FACE = None
 TopAbs_WIRE = None
+TopAbs_REVERSED = None
 TopExp_Explorer = None
 TopLoc_Location = None
 TopoDS = None
@@ -133,6 +134,7 @@ if HAS_OCCT:  # pragma: no branch
     TopAbs_EDGE = topabs_mod.TopAbs_EDGE
     TopAbs_FACE = topabs_mod.TopAbs_FACE
     TopAbs_WIRE = topabs_mod.TopAbs_WIRE
+    TopAbs_REVERSED = topabs_mod.TopAbs_REVERSED
 
     TopExp_Explorer = importlib.import_module("OCP.TopExp").TopExp_Explorer
     TopLoc_Location = importlib.import_module("OCP.TopLoc").TopLoc_Location
@@ -428,15 +430,23 @@ def _tessellate_shape(shape: Any, deflection: float = 0.1) -> MeshData:
         else:
             normals.extend([0.0, 0.0, 0.0] * nb_nodes)
 
-        # Triangles
+        # Triangles — reverse winding for REVERSED faces so normals point outward
+        reversed_face = face.Orientation() == TopAbs_REVERSED
         for i in range(1, nb_tris + 1):
             tri = triangulation.Triangle(i)
             n1, n2, n3 = tri.Get()
-            faces.extend([
-                n1 - 1 + vertex_offset,
-                n2 - 1 + vertex_offset,
-                n3 - 1 + vertex_offset,
-            ])
+            if reversed_face:
+                faces.extend([
+                    n1 - 1 + vertex_offset,
+                    n3 - 1 + vertex_offset,
+                    n2 - 1 + vertex_offset,
+                ])
+            else:
+                faces.extend([
+                    n1 - 1 + vertex_offset,
+                    n2 - 1 + vertex_offset,
+                    n3 - 1 + vertex_offset,
+                ])
 
         vertex_offset += nb_nodes
         explorer.Next()
@@ -483,10 +493,14 @@ def _tessellate_face(shape: Any, face_index: int, deflection: float = 0.1) -> tu
                 else:
                     norms.extend([0.0, 0.0, 0.0] * nb_nodes)
 
+                reversed_face = face.Orientation() == TopAbs_REVERSED
                 for i in range(1, nb_tris + 1):
                     tri = triangulation.Triangle(i)
                     n1, n2, n3 = tri.Get()
-                    tris.extend([n1 - 1, n2 - 1, n3 - 1])
+                    if reversed_face:
+                        tris.extend([n1 - 1, n3 - 1, n2 - 1])
+                    else:
+                        tris.extend([n1 - 1, n2 - 1, n3 - 1])
 
                 mesh = MeshData(vertices=verts, faces=tris, normals=norms)
 

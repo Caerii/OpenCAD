@@ -138,8 +138,13 @@ export default function App(): JSX.Element {
             ...request,
             tree_state: tree,
           });
-          setTree(response.new_tree_state);
-          const latestNodeId = getLatestGeneratedNodeId(tree, response.new_tree_state, response.operations_executed);
+          const nextTree = response.new_tree_state;
+          const liveShapeIds = new Set(
+            Object.values(nextTree.nodes).map((n) => n.shape_id).filter(Boolean)
+          );
+          setMeshes((current) => current.filter((mesh) => liveShapeIds.has(mesh.shapeId)));
+          setTree(nextTree);
+          const latestNodeId = getLatestGeneratedNodeId(tree, nextTree, response.operations_executed);
           if (latestNodeId) {
             setSelectedNodeId(latestNodeId);
           }

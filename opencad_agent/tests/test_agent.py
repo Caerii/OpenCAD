@@ -145,10 +145,11 @@ def test_chat_api_can_return_generated_code() -> None:
     assert response.status_code == 200
 
     body = response.json()
-    assert body["operations_executed"] == []
+    assert len(body["operations_executed"]) >= 1
     assert body["generated_code"].startswith('"""Generated OpenCAD example')
     assert "from opencad import Part, Sketch" in body["generated_code"]
     assert body["new_tree_state"]["root_id"] == "root"
+    assert len(body["new_tree_state"]["nodes"]) > 1
 
 
 def test_healthz() -> None:

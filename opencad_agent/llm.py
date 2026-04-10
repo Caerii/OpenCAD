@@ -23,6 +23,17 @@ def _resolve_model_name(provider: str | None, model: str) -> str:
     return model
 
 
+def _strip_code_fences(code: str) -> str:
+    code = code.strip()
+    if code.startswith("```python"):
+        code = code[len("```python"):]
+    elif code.startswith("```"):
+        code = code[len("```"):]
+    if code.endswith("```"):
+        code = code[:-len("```")]
+    return code.strip()
+
+
 def _extract_message_content(response: Any) -> str:
     choices = response.get("choices") if isinstance(response, dict) else getattr(response, "choices", None)
     if not choices:
@@ -69,4 +80,5 @@ class LiteLlmProvider:
             messages=messages,
             temperature=HIGH_REASONING_CODE_TEMPERATURE if reasoning else DEFAULT_CODE_TEMPERATURE,
         )
-        return _extract_message_content(response).strip()
+        print("About to execute: ", response)
+        return _strip_code_fences(_extract_message_content(response))

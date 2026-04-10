@@ -18,18 +18,24 @@ const vertices = [
 ];
 
 const faces = [
-  0, 1, 2,
-  0, 2, 3,
-  4, 6, 5,
-  4, 7, 6,
-  0, 4, 5,
-  0, 5, 1,
-  1, 5, 6,
-  1, 6, 2,
-  2, 6, 7,
-  2, 7, 3,
-  3, 7, 4,
-  3, 4, 0
+  // bottom (z=0, normal -Z)
+  0, 3, 2,
+  0, 2, 1,
+  // top (z=8, normal +Z)
+  4, 5, 6,
+  4, 6, 7,
+  // front (y=-12, normal -Y)
+  0, 1, 5,
+  0, 5, 4,
+  // right (x=+20, normal +X)
+  1, 2, 6,
+  1, 6, 5,
+  // back (y=+12, normal +Y)
+  2, 3, 7,
+  2, 7, 6,
+  // left (x=-20, normal -X)
+  3, 0, 4,
+  3, 4, 7,
 ];
 
 export const mockMeshes: MeshPayload[] = [

@@ -53,6 +53,30 @@ def _load_example_scripts() -> str:
     return "\n\n".join(snippets)
 
 
+_API_REFERENCE = """\
+Sketch methods (all return self for chaining):
+  Sketch(name=str, plane=str, origin=tuple)
+  .line(start=(x,y), end=(x,y))
+  .rect(width, height, *, origin=(x,y))
+  .circle(radius, *, center=(x,y), subtract=bool)   # subtract cuts a hole in the profile
+
+Part methods (all return self for chaining):
+  Part(name=str)
+  .box(length, width, height, *, name=str)
+  .cylinder(radius, height, *, name=str)
+  .sphere(radius, *, name=str)
+  .extrude(sketch, *, depth, both=False, name=str)   # sketch is a Sketch instance, NO subtract arg
+  .union(other_part, *, name=str)
+  .cut(other_part, *, name=str)
+  .fillet(*, edges=None|"all"|"top"|[id,...], radius, name=str)
+  .chamfer(*, edges=None|"all"|"top"|[id,...], distance, name=str)
+  .offset(distance, *, name=str)
+  .linear_pattern(*, direction=(x,y,z), count, spacing, name=str)
+  .circular_pattern(*, axis_origin=(x,y,z), axis_direction=(x,y,z), count, angle=360.0, name=str)
+  .mirror(*, plane_origin=(x,y,z), plane_normal=(x,y,z), name=str)
+"""
+
+
 def build_code_generation_prompt(tree_state: FeatureTree) -> str:
     base_prompt = build_system_prompt(tree_state)
     examples = _load_example_scripts()
@@ -65,7 +89,10 @@ def build_code_generation_prompt(tree_state: FeatureTree) -> str:
         "- Prefer a named sketch variable followed by a named Part fluent chain.\n"
         "- Use descriptive names for sketches, parts, and operations.\n"
         "- Keep the script self-contained and aligned with the examples below.\n"
+        "- Do not enclose the returned code with comment markers, or markers saying it's python, assume that the code is executed.\n"
         "\n"
+        "API reference (use ONLY these signatures — do not invent parameters):\n"
+        f"{_API_REFERENCE}\n"
         "Reference examples:\n"
         f"{examples}\n"
     )

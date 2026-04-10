@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+load_dotenv()
 
 from opencad.api_app import create_api_app
 from opencad_agent.models import ChatRequest, ChatResponse

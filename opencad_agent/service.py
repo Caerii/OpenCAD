@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import os
+from copy import deepcopy
+
 from opencad_agent.llm import LiteLlmProvider
-from opencad_agent.models import ChatRequest, ChatResponse
+from opencad_agent.models import ChatRequest, ChatResponse, OperationExecution
 from opencad_agent.planner import OpenCadPlanner
 from opencad_agent.prompting import build_code_generation_prompt, build_system_prompt
-from opencad_agent.tools import KernelCall, ToolRuntime
+from opencad_agent.tools import KernelCall, ToolRuntime, _call_kernel
+from opencad_tree.models import FeatureTree
 
 
 class OpenCadAgentService:
@@ -31,11 +35,12 @@ class OpenCadAgentService:
 
         if request.generate_code:
             generated_code = self._generate_code(request)
+            new_tree, operations = self._run_generated_code(generated_code, request.tree_state)
             return ChatResponse(
                 response=generated_code,
                 generated_code=generated_code,
-                operations_executed=[],
-                new_tree_state=runtime.get_tree_state(),
+                operations_executed=operations,
+                new_tree_state=new_tree,
             )
 
         response_text, operations = self.planner.execute(
@@ -50,12 +55,71 @@ class OpenCadAgentService:
             new_tree_state=runtime.get_tree_state(),
         )
 
+    def _run_generated_code(
+        self, code: str, tree_state: FeatureTree
+    ) -> tuple[FeatureTree, list[OperationExecution]]:
+        """Execute generated Part/Sketch code against the kernel and return the updated tree."""
+        from opencad.runtime import RuntimeContext, set_default_context, reset_default_context
+        print("About to run code: ", code)
+
+        _use_live = (
+            self.live_kernel
+            if self.live_kernel is not None
+            else (os.environ.get("OPENCAD_AGENT_LIVE_KERNEL", "false").lower() == "true" or self.kernel_call is not None)
+        )
+        kernel_call_fn = (self.kernel_call or _call_kernel) if _use_live else None
+
+        ctx = RuntimeContext(kernel_call_fn=kernel_call_fn)
+        ctx.tree = deepcopy(tree_state)
+        ctx._sync_counters()
+        prior_nodes = set(ctx.tree.nodes.keys())
+
+        set_default_context(ctx)
+        try:
+            exec(code, {"__name__": "__main__"})  # noqa: S102
+        except Exception as exc:
+            import httpx
+            if kernel_call_fn is not None and isinstance(exc, (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException)):
+                # Kernel unreachable — fall back to in-process and re-run
+                reset_default_context()
+                ctx = RuntimeContext()
+                ctx.tree = deepcopy(tree_state)
+                ctx._sync_counters()
+                prior_nodes = set(ctx.tree.nodes.keys())
+                set_default_context(ctx)
+                try:
+                    exec(code, {"__name__": "__main__"})  # noqa: S102
+                except Exception as exc2:
+                    raise RuntimeError(f"Generated code execution failed: {exc2}") from exc2
+                finally:
+                    reset_default_context()
+            else:
+                raise RuntimeError(f"Generated code execution failed: {exc}") from exc
+        else:
+            reset_default_context()
+
+        operations: list[OperationExecution] = []
+        for node_id, node in ctx.tree.nodes.items():
+            if node_id not in prior_nodes:
+                operations.append(
+                    OperationExecution(
+                        tool=node.operation,
+                        status="ok",
+                        arguments=node.parameters,
+                        result={"shape_id": node.shape_id or ""},
+                    )
+                )
+
+        return ctx.tree, operations
+
+
     def _generate_code(self, request: ChatRequest) -> str:
-        use_llm = request.llm_model is not None
-        if use_llm:
+        provider = request.llm_provider or os.environ.get("OPENCAD_LLM_PROVIDER")
+        model = request.llm_model or os.environ.get("OPENCAD_LLM_MODEL")
+        if model:
             return self.llm_client.generate_code(
-                provider=request.llm_provider,
-                model=request.llm_model,
+                provider=provider,
+                model=model,
                 system_prompt=build_code_generation_prompt(request.tree_state),
                 user_message=request.message,
                 conversation_history=request.conversation_history,

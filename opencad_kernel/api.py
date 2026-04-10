@@ -3,6 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -209,6 +213,7 @@ def get_mesh(
     try:
         return _KERNEL.tessellate(shape_id, deflection)
     except NotImplementedError as exc:
+        print(exc)
         raise HTTPException(status_code=501, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
