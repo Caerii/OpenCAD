@@ -1,7 +1,8 @@
-newtorkx
+networkx
 pydantic
 fastapi
 numpy # assuming lastest version unless we run into bugs
 scipy # assuming lastest version unless we run into bugs
 httpx
 uvicorn
+python-dotenv

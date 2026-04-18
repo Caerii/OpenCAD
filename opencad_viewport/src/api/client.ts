@@ -42,6 +42,7 @@ export class OpenCadApiClient {
     if (this.useMock) {
       return mockSolveSketch(sketch);
     }
+    console.log(`running ${this.baseUrl}/sketch/solve`)
     const response = await axios.post<SolverResult>("http://127.0.0.1:8001/sketch/solve", sketch);
     return response.data;
   }

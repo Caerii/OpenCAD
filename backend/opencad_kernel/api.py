@@ -6,7 +6,6 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -20,12 +19,17 @@ from opencad_kernel.core.snapshot import SnapshotV1
 from opencad_kernel.operations.handlers import OpenCadKernel
 from opencad_kernel.operations.registry import OperationRegistry
 from opencad_kernel.operations.schemas import SelectorQuery
+from fastapi import APIRouter
 
+load_dotenv()
 logger = logging.getLogger(__name__)
+router = APIRouter()
 
 # ── Backend selection ───────────────────────────────────────────────
 
 _BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "analytic")
+# _BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "occt")
+
 
 
 def _build_kernel() -> OpenCadKernel:
@@ -45,7 +49,7 @@ def _build_kernel() -> OpenCadKernel:
         return OpenCadKernel()
 
 
-app: FastAPI = create_api_app(title="OpenCAD Kernel", version="0.2.0")
+# app: FastAPI = create_api_app(title="OpenCAD Kernel", version="0.2.0")
 _KERNEL = _build_kernel()
 _REGISTRY = OperationRegistry(_KERNEL)
 
@@ -57,7 +61,7 @@ class OperationCallRequest(BaseModel):
 # ── Health ──────────────────────────────────────────────────────────
 
 
-@app.get("/healthz")
+@router.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok", "backend": _BACKEND_NAME}
 
@@ -65,7 +69,7 @@ def healthz() -> dict[str, str]:
 # ── Operations ──────────────────────────────────────────────────────
 
 
-@app.get("/operations", response_model=list[str])
+@router.get("/operations", response_model=list[str])
 def list_operations() -> list[str]:
     return _REGISTRY.list_operations()
 
@@ -73,7 +77,7 @@ def list_operations() -> list[str]:
 # ── Operation log (must be before /operations/{name} to avoid capture) ──
 
 
-@app.get("/operations/log")
+@router.get("/operations/log")
 def get_operation_log(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
@@ -82,7 +86,7 @@ def get_operation_log(
     return [e.model_dump() for e in entries]
 
 
-@app.get("/operations/log/{entry_id}")
+@router.get("/operations/log/{entry_id}")
 def get_log_entry(entry_id: str) -> dict[str, Any]:
     entry = _REGISTRY.get_log_entry(entry_id)
     if entry is None:
@@ -93,7 +97,7 @@ def get_log_entry(entry_id: str) -> dict[str, Any]:
 # ── Snapshot ────────────────────────────────────────────────────────
 
 
-@app.get("/snapshot", response_model=SnapshotV1)
+@router.get("/snapshot", response_model=SnapshotV1)
 def get_snapshot() -> SnapshotV1:
     """Return a versioned snapshot of the current kernel state."""
     return SnapshotV1(
@@ -109,7 +113,7 @@ class ReplayRequest(BaseModel):
     entries: list[dict[str, Any]]
 
 
-@app.post("/operations/replay")
+@router.post("/operations/replay")
 def replay_operations(request: ReplayRequest) -> dict[str, Any]:
     """Replay operation log entries against a fresh kernel.
 
@@ -146,7 +150,7 @@ def replay_operations(request: ReplayRequest) -> dict[str, Any]:
 # ── Operation call (wildcard — must come after specific routes) ─────
 
 
-@app.get("/operations/{name}/schema")
+@router.get("/operations/{name}/schema")
 def get_operation_schema(name: str) -> dict[str, Any]:
     try:
         return _REGISTRY.get_json_schema(name)
@@ -154,7 +158,7 @@ def get_operation_schema(name: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.post("/operations/{name}", response_model=Success | Failure)
+@router.post("/operations/{name}", response_model=Success | Failure)
 def call_operation(name: str, request: OperationCallRequest) -> OperationResult:
     return _REGISTRY.call(name, request.payload)
 
@@ -162,7 +166,7 @@ def call_operation(name: str, request: OperationCallRequest) -> OperationResult:
 # ── Topology endpoints ──────────────────────────────────────────────
 
 
-@app.get("/shapes/{shape_id}/topology")
+@router.get("/shapes/{shape_id}/topology")
 def get_topology(shape_id: str) -> dict[str, Any]:
     """Return the full topology map (faces + edges with stable refs)."""
     try:
@@ -172,7 +176,7 @@ def get_topology(shape_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.get("/shapes/{shape_id}/faces")
+@router.get("/shapes/{shape_id}/faces")
 def get_faces(shape_id: str) -> list[dict[str, Any]]:
     """List all face refs for a shape."""
     try:
@@ -182,7 +186,7 @@ def get_faces(shape_id: str) -> list[dict[str, Any]]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.get("/shapes/{shape_id}/edges")
+@router.get("/shapes/{shape_id}/edges")
 def get_edges(shape_id: str) -> list[dict[str, Any]]:
     """List all edge refs for a shape."""
     try:
@@ -192,7 +196,7 @@ def get_edges(shape_id: str) -> list[dict[str, Any]]:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.post("/shapes/{shape_id}/select")
+@router.post("/shapes/{shape_id}/select")
 def select_subshapes(shape_id: str, query: SelectorQuery) -> list[dict[str, Any]]:
     """Run a selector query against the shape's topology."""
     try:
@@ -205,7 +209,7 @@ def select_subshapes(shape_id: str, query: SelectorQuery) -> list[dict[str, Any]
 # ── Mesh endpoints ──────────────────────────────────────────────────
 
 
-@app.get("/shapes/{shape_id}/mesh", response_model=MeshData)
+@router.get("/shapes/{shape_id}/mesh", response_model=MeshData)
 def get_mesh(
     shape_id: str,
     deflection: float = Query(default=0.1, gt=0.0),
@@ -219,7 +223,7 @@ def get_mesh(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@app.get("/shapes/{shape_id}/mesh/stream")
+@router.get("/shapes/{shape_id}/mesh/stream")
 async def stream_mesh(
     shape_id: str,
     deflection: float = Query(default=0.1, gt=0.0),

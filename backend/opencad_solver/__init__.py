@@ -1,4 +1,5 @@
-from opencad_solver.api import app
+# from opencad_solver.api import app
+from opencad_solver.api import router
 from opencad_solver.backend import SolverBackend
 from opencad_solver.solver import (
     PythonSolverBackend,
