@@ -28,12 +28,12 @@ export class OpenCadApiClient {
 
   constructor(
     baseUrl = "http://127.0.0.1:8003",
-    kernelUrl = "http://127.0.0.1:8000",
+    kernelUrl?: string,
     useMock = import.meta.env.VITE_USE_MOCK !== "false",
     useChatMock = import.meta.env.VITE_USE_CHAT_MOCK === "true",
   ) {
     this.baseUrl = baseUrl;
-    this.kernelUrl = kernelUrl;
+    this.kernelUrl = kernelUrl ?? `${baseUrl}/kernel`;
     this.useMock = useMock;
     this.useChatMock = useChatMock;
   }
@@ -42,8 +42,7 @@ export class OpenCadApiClient {
     if (this.useMock) {
       return mockSolveSketch(sketch);
     }
-    console.log(`running ${this.baseUrl}/sketch/solve`)
-    const response = await axios.post<SolverResult>("http://127.0.0.1:8001/sketch/solve", sketch);
+    const response = await axios.post<SolverResult>(`${this.baseUrl}/solver/sketch/solve`, sketch);
     return response.data;
   }
 
@@ -57,12 +56,12 @@ export class OpenCadApiClient {
       };
     }
 
-    const response = await axios.post<ChatResponsePayload>(`${this.baseUrl}/chat`, request);
+    const response = await axios.post<ChatResponsePayload>(`${this.baseUrl}/agent/chat`, request);
     return response.data;
   }
 
-  async getTree(): Promise<FeatureTreeView> {
-    const response = await axios.get<FeatureTreeView>(`${this.baseUrl}/tree`);
+  async getTree(treeId: string): Promise<FeatureTreeView> {
+    const response = await axios.get<FeatureTreeView>(`${this.baseUrl}/tree/trees/${treeId}`);
     return response.data;
   }
 
