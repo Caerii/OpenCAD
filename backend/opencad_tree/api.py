@@ -10,7 +10,7 @@ import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, APIRouter
 from pydantic import BaseModel, Field
 
 from opencad.api_app import create_api_app
@@ -19,7 +19,8 @@ from opencad_tree.service import FeatureTreeService
 
 logger = logging.getLogger(__name__)
 
-app: FastAPI = create_api_app(title="OpenCAD Feature Tree", version="0.2.0")
+# app: FastAPI = create_api_app(title="OpenCAD Feature Tree", version="0.2.0")
+router = APIRouter()
 
 _TREES: dict[str, FeatureTree] = {}
 
@@ -114,29 +115,29 @@ def _kernel_client_live(node: FeatureNode, _tree: FeatureTree) -> str:
     return shape_id
 
 
-@app.get("/healthz")
+@router.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/trees", response_model=list[str])
+@router.get("/trees", response_model=list[str])
 def list_trees() -> list[str]:
     return list(_TREES.keys())
 
 
-@app.post("/trees", response_model=FeatureTree)
+@router.post("/trees", response_model=FeatureTree)
 def create_tree(tree: FeatureTree) -> FeatureTree:
     FeatureTreeService.ensure_acyclic(tree)
     _TREES[tree.root_id] = tree
     return tree
 
 
-@app.get("/trees/{tree_id}", response_model=FeatureTree)
+@router.get("/trees/{tree_id}", response_model=FeatureTree)
 def get_tree(tree_id: str) -> FeatureTree:
     return _get_tree_or_404(tree_id)
 
 
-@app.post("/trees/{tree_id}/nodes", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/nodes", response_model=FeatureTree)
 def add_node(tree_id: str, node: FeatureNode) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -147,7 +148,7 @@ def add_node(tree_id: str, node: FeatureNode) -> FeatureTree:
     return updated
 
 
-@app.post("/trees/{tree_id}/nodes/{node_id}/typed-parameters", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/nodes/{node_id}/typed-parameters", response_model=FeatureTree)
 def set_typed_parameters(
     tree_id: str,
     node_id: str,
@@ -166,7 +167,7 @@ def set_typed_parameters(
     return updated
 
 
-@app.post("/trees/{tree_id}/nodes/{node_id}/suppress", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/nodes/{node_id}/suppress", response_model=FeatureTree)
 def suppress_node(tree_id: str, node_id: str, request: SuppressFeatureRequest) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -177,7 +178,7 @@ def suppress_node(tree_id: str, node_id: str, request: SuppressFeatureRequest) -
     return updated
 
 
-@app.patch("/trees/{tree_id}/nodes/{node_id}", response_model=FeatureTree)
+@router.patch("/trees/{tree_id}/nodes/{node_id}", response_model=FeatureTree)
 def edit_node(tree_id: str, node_id: str, request: EditFeatureRequest) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -188,7 +189,7 @@ def edit_node(tree_id: str, node_id: str, request: EditFeatureRequest) -> Featur
     return updated
 
 
-@app.delete("/trees/{tree_id}/nodes/{node_id}", response_model=FeatureTree)
+@router.delete("/trees/{tree_id}/nodes/{node_id}", response_model=FeatureTree)
 def delete_node(tree_id: str, node_id: str, cascade: bool = Query(default=False)) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -199,7 +200,7 @@ def delete_node(tree_id: str, node_id: str, cascade: bool = Query(default=False)
     return updated
 
 
-@app.post("/trees/{tree_id}/rebuild", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/rebuild", response_model=FeatureTree)
 def rebuild_tree(tree_id: str, request: RebuildRequest) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     updated = FeatureTreeService.rebuild(
@@ -211,7 +212,7 @@ def rebuild_tree(tree_id: str, request: RebuildRequest) -> FeatureTree:
     return updated
 
 
-@app.post("/trees/{tree_id}/solver/{sketch_id}", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/solver/{sketch_id}", response_model=FeatureTree)
 def apply_solver_result(tree_id: str, sketch_id: str, request: SolverUpdateRequest) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -226,7 +227,7 @@ def apply_solver_result(tree_id: str, sketch_id: str, request: SolverUpdateReque
     return updated
 
 
-@app.get("/trees/{tree_id}/branches")
+@router.get("/trees/{tree_id}/branches")
 def list_branches(tree_id: str) -> dict[str, Any]:
     tree = _get_tree_or_404(tree_id)
     return {
@@ -235,7 +236,7 @@ def list_branches(tree_id: str) -> dict[str, Any]:
     }
 
 
-@app.post("/trees/{tree_id}/branches", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/branches", response_model=FeatureTree)
 def create_branch(tree_id: str, request: BranchCreateRequest) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -250,7 +251,7 @@ def create_branch(tree_id: str, request: BranchCreateRequest) -> FeatureTree:
     return updated
 
 
-@app.post("/trees/{tree_id}/branches/{branch_name}/switch", response_model=FeatureTree)
+@router.post("/trees/{tree_id}/branches/{branch_name}/switch", response_model=FeatureTree)
 def switch_branch(tree_id: str, branch_name: str) -> FeatureTree:
     tree = _get_tree_or_404(tree_id)
     try:
@@ -261,13 +262,13 @@ def switch_branch(tree_id: str, branch_name: str) -> FeatureTree:
     return updated
 
 
-@app.get("/trees/{tree_id}/serialize")
+@router.get("/trees/{tree_id}/serialize")
 def serialize_tree(tree_id: str) -> dict[str, str]:
     tree = _get_tree_or_404(tree_id)
     return {"payload": FeatureTreeService.serialize(tree)}
 
 
-@app.post("/trees/deserialize", response_model=FeatureTree)
+@router.post("/trees/deserialize", response_model=FeatureTree)
 def deserialize_tree(request: DeserializeRequest) -> FeatureTree:
     try:
         tree = FeatureTreeService.deserialize(request.payload)
@@ -280,7 +281,7 @@ def deserialize_tree(request: DeserializeRequest) -> FeatureTree:
 # ── Snapshot / restore ──────────────────────────────────────────────
 
 
-@app.get("/trees/{tree_id}/snapshot", response_model=TreeSnapshotV1)
+@router.get("/trees/{tree_id}/snapshot", response_model=TreeSnapshotV1)
 def snapshot_tree(tree_id: str) -> TreeSnapshotV1:
     tree = _get_tree_or_404(tree_id)
     return TreeSnapshotV1(tree=tree)
@@ -290,7 +291,7 @@ class RestoreSnapshotRequest(BaseModel):
     snapshot: TreeSnapshotV1
 
 
-@app.post("/trees/restore", response_model=FeatureTree)
+@router.post("/trees/restore", response_model=FeatureTree)
 def restore_snapshot(request: RestoreSnapshotRequest) -> FeatureTree:
     """Restore a tree from a versioned snapshot."""
     tree = request.snapshot.tree

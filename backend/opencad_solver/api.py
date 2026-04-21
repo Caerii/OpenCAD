@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 
 from opencad.api_app import create_api_app
 from opencad_solver.backend import SolverBackend
@@ -15,8 +15,8 @@ from opencad_solver.models import CheckResult, ConstraintDiagnostics, Sketch, So
 from opencad_solver.solver import PythonSolverBackend
 from opencad_solver.solvespace_backend import SolveSpaceBackend, is_available as slvs_available
 
-app: FastAPI = create_api_app(title="OpenCAD Solver", version="0.2.0")
-
+# app: FastAPI = create_api_app(title="OpenCAD Solver", version="0.2.0")
+router = APIRouter()
 
 # ── Backend selection ───────────────────────────────────────────────
 
@@ -42,12 +42,12 @@ def _make_backend() -> SolverBackend:
 _backend: SolverBackend = _make_backend()
 
 
-@app.get("/healthz")
+@router.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/backend")
+@router.get("/backend")
 def backend_info() -> dict[str, Any]:
     """Report which solver backend is active and its capabilities."""
     return {
@@ -57,17 +57,17 @@ def backend_info() -> dict[str, Any]:
     }
 
 
-@app.post("/sketch/solve", response_model=SolveResult)
+@router.post("/sketch/solve", response_model=SolveResult)
 def solve_endpoint(sketch: Sketch) -> SolveResult:
     return _backend.solve(sketch)
 
 
-@app.post("/sketch/check", response_model=CheckResult)
+@router.post("/sketch/check", response_model=CheckResult)
 def check_endpoint(sketch: Sketch) -> CheckResult:
     return _backend.check(sketch)
 
 
-@app.post("/sketch/diagnose", response_model=ConstraintDiagnostics)
+@router.post("/sketch/diagnose", response_model=ConstraintDiagnostics)
 def diagnose_endpoint(sketch: Sketch) -> ConstraintDiagnostics:
     """Full constraint-graph introspection.
 

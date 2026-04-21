@@ -39,3 +39,5 @@ opencad_viewport/package-lock.json
 *.tmp
 *.swp
 *.tsbuildinfo
+
+.vscode/
