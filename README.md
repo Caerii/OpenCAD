@@ -55,10 +55,13 @@ pip install -e ".[llm]"
 Each service runs on its own port:
 
 ```bash
-python -m uvicorn opencad_kernel.api:app --reload --port 8000   # 1 – Kernel
-python -m uvicorn opencad_solver.api:app --reload --port 8001   # 2 – Solver
-python -m uvicorn opencad_tree.api:app   --reload --port 8002   # 3 – Tree
-python -m uvicorn opencad_agent.api:app  --reload --port 8003   # 5 – Agent
+# python -m uvicorn opencad_kernel.api:app --reload --port 8000   # 1 – Kernel
+# python -m uvicorn opencad_solver.api:app --reload --port 8001   # 2 – Solver
+# python -m uvicorn opencad_tree.api:app   --reload --port 8002   # 3 – Tree
+# python -m uvicorn opencad_agent.api:app  --reload --port 8003   # 5 – Agent
+
+cd /backend
+python3 -m uvicorn api:app --reload --port 8000
 ```
 
 ### 3. Check health
