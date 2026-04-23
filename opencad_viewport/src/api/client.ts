@@ -27,7 +27,7 @@ export class OpenCadApiClient {
   private readonly useChatMock: boolean;
 
   constructor(
-    baseUrl = "http://127.0.0.1:8003",
+    baseUrl = import.meta.env.VITE_BASE_URL ?? "http://127.0.0.1:8000",
     kernelUrl?: string,
     useMock = import.meta.env.VITE_USE_MOCK !== "false",
     useChatMock = import.meta.env.VITE_USE_CHAT_MOCK === "true",
