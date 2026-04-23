@@ -64,6 +64,28 @@ cd /backend
 python3 -m uvicorn api:app --reload --port 8000
 ```
 
+### Run the dev script
+
+To start the backend and frontend together from the repository root:
+
+```bash
+npm install --prefix opencad_viewport
+./scripts/run_dev.sh
+```
+
+This starts:
+
+- backend: `http://127.0.0.1:8000`
+- frontend: `http://127.0.0.1:5173`
+
+Press `Ctrl+C` to stop both services.
+
+Optional environment overrides:
+
+```bash
+BACKEND_HOST=0.0.0.0 BACKEND_PORT=8000 FRONTEND_HOST=0.0.0.0 FRONTEND_PORT=5173 ./scripts/run_dev.sh
+```
+
 ### 3. Check health
 
 ```bash
