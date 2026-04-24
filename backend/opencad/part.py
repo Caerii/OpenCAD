@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self
+from typing import Any, Self
 
 from opencad_kernel.operations.schemas import SelectorQuery
 
@@ -295,4 +295,21 @@ class Part:
     def export(self, filepath: str) -> Self:
         _, shape_id = self._require_shape()
         self._context.export_step(shape_id, filepath)
+        return self
+
+    def export_design_artifact(
+        self,
+        filepath: str,
+        *,
+        artifact_id: str | None = None,
+        parameters: dict[str, Any] | None = None,
+        simulation_tags: list[dict[str, Any]] | None = None,
+    ) -> Self:
+        self._require_shape()
+        self._context.export_design_artifact(
+            filepath,
+            artifact_id=artifact_id or self._name,
+            parameters=parameters,
+            simulation_tags=simulation_tags,
+        )
         return self

@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from opencad.api_app import create_api_app
+from opencad.version import __version__
 from opencad_kernel.core.errors import Failure
 from opencad_kernel.core.models import MeshData, OperationResult, Success
 from opencad_kernel.core.snapshot import SnapshotV1
@@ -39,7 +40,7 @@ def _build_kernel() -> OpenCadKernel:
         except ImportError as exc:
             raise RuntimeError(
                 "OPENCAD_KERNEL_BACKEND=occt but CadQuery/OCP is not installed.  "
-                "Install with:  pip install -e '.[occt]'"
+                "Install with: uv sync --extra occt"
             ) from exc
         backend = OcctBackend()
         logger.info("Kernel started with OCCT backend")
@@ -49,7 +50,7 @@ def _build_kernel() -> OpenCadKernel:
         return OpenCadKernel()
 
 
-# app: FastAPI = create_api_app(title="OpenCAD Kernel", version="0.2.0")
+app: FastAPI = create_api_app(title="OpenCAD Kernel", version=__version__)
 _KERNEL = _build_kernel()
 _REGISTRY = OperationRegistry(_KERNEL)
 
@@ -272,3 +273,6 @@ async def stream_mesh(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+app.include_router(router)

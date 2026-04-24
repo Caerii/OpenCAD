@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from opencad_kernel.operations.handlers import OpenCadKernel
 from opencad_kernel.operations.registry import OperationRegistry
@@ -10,6 +10,9 @@ from opencad_tree.models import FeatureNode, FeatureTree
 from opencad_tree.service import FeatureTreeService
 
 KernelCallFn = Callable[[str, dict[str, Any]], dict[str, Any]]
+
+if TYPE_CHECKING:
+    from opencad.design_artifact import DesignArtifact
 
 
 class RuntimeContext:
@@ -73,7 +76,6 @@ class RuntimeContext:
         feature_id: str | None = None,
     ) -> tuple[str, str]:
         """Execute a kernel operation and append a built feature node."""
-        print("calling operation: ", operation)
         depends = depends_on or []
         if self._external_kernel_call is not None:
             response = self._external_kernel_call(operation, payload)
@@ -148,6 +150,24 @@ class RuntimeContext:
 
     def save_tree_json(self, filepath: str) -> None:
         Path(filepath).write_text(self.serialize_tree(), encoding="utf-8")
+
+    def export_design_artifact(
+        self,
+        filepath: str,
+        *,
+        artifact_id: str,
+        parameters: dict[str, Any] | None = None,
+        simulation_tags: list[dict[str, Any]] | None = None,
+    ) -> DesignArtifact:
+        from opencad.design_artifact import export_design_artifact
+
+        return export_design_artifact(
+            filepath,
+            artifact_id=artifact_id,
+            context=self,
+            parameters=parameters,
+            simulation_tags=simulation_tags,
+        )
 
     def load_tree_json(self, filepath: str) -> FeatureTree:
         payload = Path(filepath).read_text(encoding="utf-8")

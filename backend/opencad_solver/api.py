@@ -10,12 +10,13 @@ from typing import Any
 from fastapi import FastAPI, APIRouter
 
 from opencad.api_app import create_api_app
+from opencad.version import __version__
 from opencad_solver.backend import SolverBackend
 from opencad_solver.models import CheckResult, ConstraintDiagnostics, Sketch, SolveResult
 from opencad_solver.solver import PythonSolverBackend
 from opencad_solver.solvespace_backend import SolveSpaceBackend, is_available as slvs_available
 
-# app: FastAPI = create_api_app(title="OpenCAD Solver", version="0.2.0")
+app: FastAPI = create_api_app(title="OpenCAD Solver", version=__version__)
 router = APIRouter()
 
 # ── Backend selection ───────────────────────────────────────────────
@@ -75,3 +76,6 @@ def diagnose_endpoint(sketch: Sketch) -> ConstraintDiagnostics:
     structure, and variable ↔ constraint index mapping.
     """
     return _backend.diagnose(sketch)
+
+
+app.include_router(router)

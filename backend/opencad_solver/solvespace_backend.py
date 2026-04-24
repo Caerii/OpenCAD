@@ -7,7 +7,7 @@ this backend.
 
 Install::
 
-    pip install python-solvespace
+    uv pip install python-solvespace
 
 SolveSpace is a production-grade 2-D/3-D parametric constraint solver
 (https://solvespace.com).  This adapter maps OpenCAD sketch entities
@@ -116,7 +116,7 @@ class SolveSpaceBackend:
         if not _SLVS_AVAILABLE:
             raise SolveSpaceUnavailableError(
                 "python-solvespace is not installed.  "
-                "Install it with:  pip install python-solvespace"
+                "Install it with: uv pip install python-solvespace"
             )
 
     def _solve_via_slvs(

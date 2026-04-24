@@ -37,7 +37,7 @@ def build_system_prompt(tree_state: FeatureTree) -> str:
 
 @lru_cache(maxsize=1)
 def _load_example_scripts() -> str:
-    examples_dir = Path(__file__).resolve().parents[1] / "examples"
+    examples_dir = Path(__file__).resolve().parents[2] / "examples"
     example_files = [
         "hardware_mounting_bracket.py",
         "hardware_pcb_carrier.py",
