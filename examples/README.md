@@ -11,6 +11,7 @@ teams.
 - `software_hmi_panel.py` — front panel for a software-driven operator interface
 - `firmware_programmer_fixture.py` — fixture plate for firmware flashing or debug access
 - `full_device_cable_grommet.py` — cable-management part built from primitive booleans
+- `simcorrect_forearm_design.py` - CAID design artifact for SimCorrect Problem 1
 - `agents/generate_mounting_bracket_code.py` — agent-driven example-style code generation
 
 ## Running an example
@@ -25,5 +26,13 @@ python -m opencad.cli run examples/hardware_mounting_bracket.py \
 
 Each script leaves the final part in the default runtime context, so the CLI can export
 both a STEP file and a serialized feature tree.
+
+To generate the SimCorrect Problem 1 handoff artifact:
+
+```bash
+uv run --no-sync python examples/simcorrect_forearm_design.py
+```
+
+This writes `caid-design.json` with `forearm_length` mapped to the MuJoCo parameter `link2_length`.
 
 For agent-focused examples, see [`examples/agents/README.md`](agents/README.md).

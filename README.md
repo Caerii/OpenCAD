@@ -30,24 +30,22 @@ scripts/             # Backend smoke tests
 For a packaged install (for example from a wheel or a PyPI release), use:
 
 ```bash
-pip install opencad
+uv pip install opencad
 ```
 
 For local development from this repository:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install -e ".[test]"
+uv sync --extra test --extra server
 cp .env.example .env
 ```
 
 Install optional integrations as needed, for example:
 
 ```bash
-pip install -e ".[full]"
-pip install -e ".[llm]"
+uv sync --extra occt
+uv sync --extra llm
+uv sync --extra full
 ```
 
 ### 2. Start backend services
@@ -55,13 +53,13 @@ pip install -e ".[llm]"
 Each service runs on its own port:
 
 ```bash
-# python -m uvicorn opencad_kernel.api:app --reload --port 8000   # 1 – Kernel
-# python -m uvicorn opencad_solver.api:app --reload --port 8001   # 2 – Solver
-# python -m uvicorn opencad_tree.api:app   --reload --port 8002   # 3 – Tree
-# python -m uvicorn opencad_agent.api:app  --reload --port 8003   # 5 – Agent
+# uv run --no-sync python -m uvicorn opencad_kernel.api:app --reload --port 8000   # 1 – Kernel
+# uv run --no-sync python -m uvicorn opencad_solver.api:app --reload --port 8001   # 2 – Solver
+# uv run --no-sync python -m uvicorn opencad_tree.api:app   --reload --port 8002   # 3 – Tree
+# uv run --no-sync python -m uvicorn opencad_agent.api:app  --reload --port 8003   # 5 – Agent
 
-cd /backend
-python3 -m uvicorn api:app --reload --port 8000
+cd backend
+uv run --no-sync python -m uvicorn api:app --reload --port 8000
 ```
 
 ### Run the dev script
@@ -69,7 +67,9 @@ python3 -m uvicorn api:app --reload --port 8000
 To start the backend and frontend together from the repository root:
 
 ```bash
-npm install --prefix opencad_viewport
+cd opencad_viewport
+pnpm install
+cd ..
 ./scripts/run_dev.sh
 ```
 
@@ -99,8 +99,8 @@ curl -s http://127.0.0.1:8003/healthz
 
 ```bash
 cd opencad_viewport
-npm install
-npm run dev                              # → http://localhost:5173
+pnpm install
+pnpm dev                                 # → http://localhost:5173
 ```
 
 The viewport uses **mock geometry/solver data** by default (no backend required for those flows).
@@ -127,7 +127,7 @@ See `SECURITY.md` for coordinated vulnerability reporting.
 ## Testing
 
 ```bash
-pytest
+uv run --no-sync python -m pytest
 ```
 
 ## Headless Scripting
@@ -145,6 +145,25 @@ part.export("output.step")
 
 Every fluent call appends a built `FeatureNode` to the in-memory DAG, so headless runs are recoverable.
 Fluent sketches also persist `entities` + `profile_order` metadata in the sketch node, matching agent-path ordering semantics for deterministic profile reconstruction.
+
+## CAID Design Artifact
+
+OpenCAD can export a versioned JSON artifact for SimCorrect. The artifact carries the feature tree, named parameters, and simulation tags; SimCorrect returns structured parameter patches against those names.
+
+```python
+from opencad import Part, Sketch
+
+part = Part(name="forearm").extrude(Sketch().rect(30, 4), depth=4)
+part.export_design_artifact(
+    "caid-design.json",
+    artifact_id="forearm-demo",
+    parameters={"forearm_length": {"value": 0.30, "unit": "m", "role": "geometry"}},
+    simulation_tags=[
+        {"name": "right_forearm", "kind": "body", "target": "r_forearm"},
+        {"name": "forearm_length", "kind": "parameter", "target": "link2_length"},
+    ],
+)
+```
 
 ## CLI
 
@@ -181,6 +200,10 @@ tree unchanged.
 For a runnable script example, see [`examples/agents/README.md`](examples/agents/README.md).
 
 ## Documentation
+
+- [CHANGELOG.md](CHANGELOG.md) - release notes
+- [CONTRIBUTING.md](CONTRIBUTING.md) - development and contract workflow
+- [docs/RECONSTRUCTION_AND_UPGRADE_PLAN.md](docs/RECONSTRUCTION_AND_UPGRADE_PLAN.md) - local reconstruction status and CAID upgrade plan
 
 - [PRODUCTION.md](PRODUCTION.md) — deployment, routes, and verification
 - [ARCHITECTURE.md](ARCHITECTURE.md) — component design and API contracts

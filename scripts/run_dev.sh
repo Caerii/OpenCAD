@@ -44,14 +44,14 @@ trap cleanup EXIT INT TERM
 echo "Starting backend on http://$BACKEND_HOST:$BACKEND_PORT"
 (
   cd "$BACKEND_DIR"
-  python3 -m uvicorn api:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"
+  uv run --no-sync python -m uvicorn api:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"
 ) &
 backend_pid=$!
 
 echo "Starting frontend on http://$FRONTEND_HOST:$FRONTEND_PORT"
 (
   cd "$FRONTEND_DIR"
-  npm run dev -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT"
+  pnpm dev -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT"
 ) &
 frontend_pid=$!
 
