@@ -38,7 +38,7 @@ pnpm build
 Result:
 
 ```text
-222 passed, 17 skipped
+223 passed, 17 skipped
 viewport tests: 3 passed
 viewport build: passed
 ```
