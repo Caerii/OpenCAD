@@ -31,6 +31,8 @@ OpenCAD owns the CAID design artifact:
 
 Keep this contract small, versioned, and test-covered. Do not add problem-specific fields until a SimCorrect problem needs them.
 
+The written contract lives in `docs/CAID_ARTIFACT_CONTRACT.md`.
+
 ## Generated Files
 
 Do not commit local virtualenvs, build outputs, mock STEP exports, or ad hoc generated artifacts unless they are intentional fixtures.

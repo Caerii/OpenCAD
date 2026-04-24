@@ -203,6 +203,7 @@ For a runnable script example, see [`examples/agents/README.md`](examples/agents
 
 - [CHANGELOG.md](CHANGELOG.md) - release notes
 - [CONTRIBUTING.md](CONTRIBUTING.md) - development and contract workflow
+- [docs/CAID_ARTIFACT_CONTRACT.md](docs/CAID_ARTIFACT_CONTRACT.md) - artifact and patch semantics
 - [docs/RECONSTRUCTION_AND_UPGRADE_PLAN.md](docs/RECONSTRUCTION_AND_UPGRADE_PLAN.md) - local reconstruction status and CAID upgrade plan
 
 - [PRODUCTION.md](PRODUCTION.md) — deployment, routes, and verification
