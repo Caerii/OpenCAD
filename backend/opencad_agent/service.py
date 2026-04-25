@@ -4,6 +4,7 @@ import logging
 import os
 from copy import deepcopy
 
+from opencad_agent.generated_code import execute_generated_code
 from opencad_agent.llm import LiteLlmProvider
 from opencad_agent.models import ChatRequest, ChatResponse, OperationExecution
 from opencad_agent.planner import OpenCadPlanner
@@ -62,7 +63,7 @@ class OpenCadAgentService:
         self, code: str, tree_state: FeatureTree
     ) -> tuple[FeatureTree, list[OperationExecution]]:
         """Execute generated Part/Sketch code against the kernel and return the updated tree."""
-        from opencad.runtime import RuntimeContext, set_default_context, reset_default_context
+        from opencad.runtime import RuntimeContext
         logger.debug("Running generated OpenCAD code")
 
         _use_live = (
@@ -77,29 +78,22 @@ class OpenCadAgentService:
         ctx._sync_counters()
         prior_nodes = set(ctx.tree.nodes.keys())
 
-        set_default_context(ctx)
         try:
-            exec(code, {"__name__": "__main__"})  # noqa: S102
+            self._execute_code_in_context(code, ctx)
         except Exception as exc:
             import httpx
             if kernel_call_fn is not None and isinstance(exc, (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException)):
                 # Kernel unreachable — fall back to in-process and re-run
-                reset_default_context()
                 ctx = RuntimeContext()
                 ctx.tree = deepcopy(tree_state)
                 ctx._sync_counters()
                 prior_nodes = set(ctx.tree.nodes.keys())
-                set_default_context(ctx)
                 try:
-                    exec(code, {"__name__": "__main__"})  # noqa: S102
+                    self._execute_code_in_context(code, ctx)
                 except Exception as exc2:
                     raise RuntimeError(f"Generated code execution failed: {exc2}") from exc2
-                finally:
-                    reset_default_context()
             else:
                 raise RuntimeError(f"Generated code execution failed: {exc}") from exc
-        else:
-            reset_default_context()
 
         operations: list[OperationExecution] = []
         for node_id, node in ctx.tree.nodes.items():
@@ -115,6 +109,15 @@ class OpenCadAgentService:
 
         return ctx.tree, operations
 
+    @staticmethod
+    def _execute_code_in_context(code: str, ctx: object) -> None:
+        from opencad.runtime import reset_default_context, set_default_context
+
+        set_default_context(ctx)
+        try:
+            execute_generated_code(code)
+        finally:
+            reset_default_context()
 
     def _generate_code(self, request: ChatRequest) -> str:
         provider = request.llm_provider or os.environ.get("OPENCAD_LLM_PROVIDER")

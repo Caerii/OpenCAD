@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from opencad_agent.api import app
+from opencad_agent.generated_code import GeneratedCodePolicyError, validate_generated_code
 from opencad_agent.llm import LiteLlmProvider
 from opencad_agent.models import ChatRequest
 from opencad_agent.planner import OpenCadPlanner
@@ -52,6 +53,7 @@ def test_code_generation_prompt_contains_example_scripts() -> None:
     assert "Return only valid Python code." in prompt
     assert "examples/hardware_mounting_bracket.py" in prompt
     assert "from opencad import Part, Sketch" in prompt
+    assert "Do not use filesystem" in prompt
 
 
 @pytest.mark.parametrize(
@@ -150,6 +152,43 @@ def test_chat_api_can_return_generated_code() -> None:
     assert "from opencad import Part, Sketch" in body["generated_code"]
     assert body["new_tree_state"]["root_id"] == "root"
     assert len(body["new_tree_state"]["nodes"]) > 1
+
+
+def test_generated_code_policy_rejects_filesystem_imports() -> None:
+    with pytest.raises(GeneratedCodePolicyError, match="only import Part and Sketch"):
+        validate_generated_code("import os\nos.remove('part.step')\n")
+
+
+def test_generated_code_policy_rejects_file_access() -> None:
+    with pytest.raises(GeneratedCodePolicyError, match="'open'"):
+        validate_generated_code("from opencad import Part, Sketch\nopen('part.step', 'w')\n")
+
+
+def test_generated_code_policy_rejects_loops_before_execution() -> None:
+    with pytest.raises(GeneratedCodePolicyError, match="For"):
+        validate_generated_code("from opencad import Part, Sketch\nfor _ in range(10):\n    Part(name='Loop')\n")
+
+
+def test_service_surfaces_generated_code_policy_failures() -> None:
+    service = OpenCadAgentService(
+        llm_client=LiteLlmProvider(
+            completion_func=lambda **_: {
+                "choices": [{"message": {"content": "from opencad import Part, Sketch\nopen('part.step', 'w')"}}]
+            }
+        )
+    )
+
+    with pytest.raises(RuntimeError, match="Generated code execution failed"):
+        service.chat(
+            ChatRequest(
+                message="Generate unsafe code",
+                tree_state=_seed_tree(),
+                conversation_history=[],
+                reasoning=False,
+                llm_model="test-model",
+                generate_code=True,
+            )
+        )
 
 
 def test_healthz() -> None:
