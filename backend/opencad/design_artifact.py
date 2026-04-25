@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable, Literal
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from opencad.version import __version__
 from opencad_tree.models import FeatureTree
@@ -14,6 +14,10 @@ if TYPE_CHECKING:
     from opencad.runtime import RuntimeContext
 
 ARTIFACT_SCHEMA_VERSION = 1
+ARTIFACT_REQUIRED_KEYS = frozenset(
+    {"schema_version", "artifact_id", "producer", "created_at", "feature_tree", "parameters", "simulation_tags"}
+)
+PATCH_REQUIRED_KEYS = frozenset({"schema_version", "artifact_id", "source", "parameter_patches"})
 
 ParameterValue = bool | int | float | str
 SimulationKind = Literal["body", "joint", "geom", "site", "parameter"]
@@ -42,20 +46,27 @@ class ParameterPatch(BaseModel):
 
 
 class DesignPatch(BaseModel):
-    schema_version: int = Field(default=ARTIFACT_SCHEMA_VERSION, frozen=True)
+    schema_version: Literal[ARTIFACT_SCHEMA_VERSION] = ARTIFACT_SCHEMA_VERSION
     artifact_id: str
     source: str = "simcorrect"
     parameter_patches: list[ParameterPatch] = Field(min_length=1)
 
 
 class DesignArtifact(BaseModel):
-    schema_version: int = Field(default=ARTIFACT_SCHEMA_VERSION, frozen=True)
+    schema_version: Literal[ARTIFACT_SCHEMA_VERSION] = ARTIFACT_SCHEMA_VERSION
     artifact_id: str
     producer: dict[str, str] = Field(default_factory=lambda: {"name": "opencad", "version": __version__})
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     feature_tree: FeatureTree
     parameters: dict[str, DesignParameter] = Field(default_factory=dict)
     simulation_tags: list[SimulationTag] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _parameter_keys_match_names(self) -> Self:
+        for name, parameter in self.parameters.items():
+            if parameter.name != name:
+                raise ValueError(f"Parameter map key '{name}' does not match parameter name '{parameter.name}'.")
+        return self
 
     def parameter_values(self) -> dict[str, ParameterValue]:
         return {name: parameter.value for name, parameter in self.parameters.items()}
@@ -103,10 +114,13 @@ def export_design_artifact(
 
 def load_design_artifact(path: str | Path) -> DesignArtifact:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    validate_design_artifact_payload(payload)
     return DesignArtifact.model_validate(payload)
 
 
 def apply_design_patch(artifact: DesignArtifact, patch: DesignPatch | dict[str, Any]) -> DesignArtifact:
+    if isinstance(patch, dict):
+        validate_design_patch_payload(patch)
     patch_model = DesignPatch.model_validate(patch)
     if patch_model.artifact_id != artifact.artifact_id:
         raise ValueError(f"Patch targets '{patch_model.artifact_id}', not '{artifact.artifact_id}'.")
@@ -124,6 +138,18 @@ def apply_design_patch(artifact: DesignArtifact, patch: DesignPatch | dict[str, 
         parameters[item.name] = current.model_copy(update={"value": item.value})
 
     return artifact.model_copy(update={"parameters": parameters})
+
+
+def validate_design_artifact_payload(payload: Any) -> None:
+    _require_object(payload, "CAID design artifact")
+    _require_keys(payload, ARTIFACT_REQUIRED_KEYS, "CAID design artifact")
+    DesignArtifact.model_validate(payload)
+
+
+def validate_design_patch_payload(payload: Any) -> None:
+    _require_object(payload, "CAID design patch")
+    _require_keys(payload, PATCH_REQUIRED_KEYS, "CAID design patch")
+    DesignPatch.model_validate(payload)
 
 
 def _parameter_map(
@@ -149,3 +175,14 @@ def _parameter_map(
 
 def _to_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _require_object(payload: Any, label: str) -> None:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} must be a JSON object.")
+
+
+def _require_keys(payload: dict[str, Any], required: frozenset[str], label: str) -> None:
+    missing = sorted(required - payload.keys())
+    if missing:
+        raise ValueError(f"{label} missing required key(s): {', '.join(missing)}.")

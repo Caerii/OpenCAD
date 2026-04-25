@@ -8,6 +8,8 @@ from opencad.design_artifact import (
     apply_design_patch,
     export_design_artifact,
     load_design_artifact,
+    validate_design_artifact_payload,
+    validate_design_patch_payload,
 )
 from opencad.part import Part
 from opencad.runtime import RuntimeContext, get_default_context, reset_default_context, set_default_context
@@ -31,4 +33,6 @@ __all__ = [
     "apply_design_patch",
     "export_design_artifact",
     "load_design_artifact",
+    "validate_design_artifact_payload",
+    "validate_design_patch_payload",
 ]
