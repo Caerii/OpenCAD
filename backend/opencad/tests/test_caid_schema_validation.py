@@ -61,6 +61,10 @@ def test_committed_json_schemas_expose_required_contract_keys() -> None:
     assert set(patch_schema["required"]) == PATCH_REQUIRED_KEYS
     assert artifact_schema["properties"]["schema_version"]["const"] == 1
     assert patch_schema["properties"]["schema_version"]["const"] == 1
+    assert "anyOf" in artifact_schema["$defs"]["parameter_value"]
+    assert "oneOf" not in artifact_schema["$defs"]["parameter_value"]
+    assert "anyOf" in patch_schema["$defs"]["parameter_patch"]["properties"]["value"]
+    assert "oneOf" not in patch_schema["$defs"]["parameter_patch"]["properties"]["value"]
 
 
 def test_external_artifact_payload_requires_full_contract_envelope(tmp_path: Path) -> None:

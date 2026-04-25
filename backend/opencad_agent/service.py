@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from copy import deepcopy
 
@@ -9,6 +10,8 @@ from opencad_agent.planner import OpenCadPlanner
 from opencad_agent.prompting import build_code_generation_prompt, build_system_prompt
 from opencad_agent.tools import KernelCall, ToolRuntime, _call_kernel
 from opencad_tree.models import FeatureTree
+
+logger = logging.getLogger(__name__)
 
 
 class OpenCadAgentService:
@@ -60,7 +63,7 @@ class OpenCadAgentService:
     ) -> tuple[FeatureTree, list[OperationExecution]]:
         """Execute generated Part/Sketch code against the kernel and return the updated tree."""
         from opencad.runtime import RuntimeContext, set_default_context, reset_default_context
-        print("About to run code: ", code)
+        logger.debug("Running generated OpenCAD code")
 
         _use_live = (
             self.live_kernel

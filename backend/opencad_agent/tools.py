@@ -19,7 +19,6 @@ KernelCall = Callable[[str, dict[str, Any]], dict[str, Any]]
 def _call_kernel(operation: str, params: dict[str, Any]) -> dict[str, Any]:
     """Call the kernel service over HTTP and return the response dict."""
     import httpx
-    print("_call_kernel: ", operation, params)
 
     url = f"{_KERNEL_URL}/operations/{operation}"
     response = httpx.post(url, json={"payload": params}, timeout=30.0)

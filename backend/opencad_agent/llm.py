@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Callable
 
 from opencad_agent.models import ChatHistoryItem
+
+logger = logging.getLogger(__name__)
 
 LiteLlmCompletion = Callable[..., Any]
 # Keep code generation near-deterministic by default, but allow a modest bump when
@@ -80,5 +83,5 @@ class LiteLlmProvider:
             messages=messages,
             temperature=HIGH_REASONING_CODE_TEMPERATURE if reasoning else DEFAULT_CODE_TEMPERATURE,
         )
-        print("About to execute: ", response)
+        logger.debug("Received LLM code-generation response")
         return _strip_code_fences(_extract_message_content(response))

@@ -218,7 +218,7 @@ def get_mesh(
     try:
         return _KERNEL.tessellate(shape_id, deflection)
     except NotImplementedError as exc:
-        print(exc)
+        logger.info("Mesh tessellation is unavailable: %s", exc)
         raise HTTPException(status_code=501, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
