@@ -14,12 +14,13 @@ from fastapi import FastAPI, HTTPException, Query, APIRouter
 from pydantic import BaseModel, Field
 
 from opencad.api_app import create_api_app
+from opencad.version import __version__
 from opencad_tree.models import FeatureNode, FeatureTree, RebuildRequest, TreeSnapshotV1
 from opencad_tree.service import FeatureTreeService
 
 logger = logging.getLogger(__name__)
 
-# app: FastAPI = create_api_app(title="OpenCAD Feature Tree", version="0.2.0")
+app: FastAPI = create_api_app(title="OpenCAD Feature Tree", version=__version__)
 router = APIRouter()
 
 _TREES: dict[str, FeatureTree] = {}
@@ -301,3 +302,6 @@ def restore_snapshot(request: RestoreSnapshotRequest) -> FeatureTree:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     _TREES[tree.root_id] = tree
     return tree
+
+
+app.include_router(router)

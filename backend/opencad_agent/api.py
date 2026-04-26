@@ -7,10 +7,11 @@ load_dotenv()
 router = APIRouter()
 
 from opencad.api_app import create_api_app
+from opencad.version import __version__
 from opencad_agent.models import ChatRequest, ChatResponse
 from opencad_agent.service import OpenCadAgentService
 
-# app: FastAPI = create_api_app(title="OpenCAD Agent", version="0.1.0")
+app: FastAPI = create_api_app(title="OpenCAD Agent", version=__version__)
 _service = OpenCadAgentService()
 
 
@@ -22,3 +23,6 @@ def healthz() -> dict[str, str]:
 @router.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     return _service.chat(request)
+
+
+app.include_router(router)

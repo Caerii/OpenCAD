@@ -39,5 +39,6 @@ opencad_viewport/package-lock.json
 *.tmp
 *.swp
 *.tsbuildinfo
+caid-design.json
 
 .vscode/

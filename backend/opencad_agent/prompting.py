@@ -37,7 +37,7 @@ def build_system_prompt(tree_state: FeatureTree) -> str:
 
 @lru_cache(maxsize=1)
 def _load_example_scripts() -> str:
-    examples_dir = Path(__file__).resolve().parents[1] / "examples"
+    examples_dir = Path(__file__).resolve().parents[2] / "examples"
     example_files = [
         "hardware_mounting_bracket.py",
         "hardware_pcb_carrier.py",
@@ -89,6 +89,7 @@ def build_code_generation_prompt(tree_state: FeatureTree) -> str:
         "- Prefer a named sketch variable followed by a named Part fluent chain.\n"
         "- Use descriptive names for sketches, parts, and operations.\n"
         "- Keep the script self-contained and aligned with the examples below.\n"
+        "- Do not use filesystem, network, subprocess, dynamic execution, functions, classes, loops, or imports other than `from opencad import Part, Sketch`.\n"
         "- Do not enclose the returned code with comment markers, or markers saying it's python, assume that the code is executed.\n"
         "\n"
         "API reference (use ONLY these signatures — do not invent parameters):\n"
