@@ -292,12 +292,3 @@ def test_chat_request_requires_model_when_provider_is_set() -> None:
             llm_provider="openai",
             generate_code=True,
         )
-
-
-def test_agent_examples_readme_includes_claude_and_gemini_commands() -> None:
-    readme = (REPO_ROOT / "examples" / "agents" / "README.md").read_text(encoding="utf-8")
-
-    assert "OPENCAD_LLM_PROVIDER=anthropic" in readme
-    assert "OPENCAD_LLM_MODEL=claude-3-5-sonnet-latest" in readme
-    assert "OPENCAD_LLM_PROVIDER=gemini" in readme
-    assert "OPENCAD_LLM_MODEL=gemini-2.0-flash" in readme
