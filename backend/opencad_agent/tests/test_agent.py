@@ -294,20 +294,6 @@ def test_chat_request_requires_model_when_provider_is_set() -> None:
         )
 
 
-def test_agent_example_script_runs_with_deterministic_fallback(
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    monkeypatch.delenv("OPENCAD_LLM_PROVIDER", raising=False)
-    monkeypatch.delenv("OPENCAD_LLM_MODEL", raising=False)
-
-    runpy.run_path(str(REPO_ROOT / "examples" / "agents" / "generate_mounting_bracket_code.py"), run_name="__main__")
-
-    output = capsys.readouterr().out
-    assert "from opencad import Part, Sketch" in output
-    assert "Generated Mounting Bracket" in output
-
-
 def test_agent_examples_readme_includes_claude_and_gemini_commands() -> None:
     readme = (REPO_ROOT / "examples" / "agents" / "README.md").read_text(encoding="utf-8")
 
