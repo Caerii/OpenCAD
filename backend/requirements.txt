@@ -6,3 +6,5 @@ scipy # assuming lastest version unless we run into bugs
 httpx
 uvicorn
 python-dotenv
+cadquery>=2.4
+cadquery-ocp>=7.7
