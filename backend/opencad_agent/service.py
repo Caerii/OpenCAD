@@ -60,7 +60,9 @@ class OpenCadAgentService:
         )
 
     def _run_generated_code(
-        self, code: str, tree_state: FeatureTree
+        self, 
+        code: str, 
+        tree_state: FeatureTree
     ) -> tuple[FeatureTree, list[OperationExecution]]:
         """Execute generated Part/Sketch code against the kernel and return the updated tree."""
         from opencad.runtime import RuntimeContext
@@ -78,22 +80,24 @@ class OpenCadAgentService:
         ctx._sync_counters()
         prior_nodes = set(ctx.tree.nodes.keys())
 
-        try:
-            self._execute_code_in_context(code, ctx)
-        except Exception as exc:
-            import httpx
-            if kernel_call_fn is not None and isinstance(exc, (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException)):
-                # Kernel unreachable — fall back to in-process and re-run
-                ctx = RuntimeContext()
-                ctx.tree = deepcopy(tree_state)
-                ctx._sync_counters()
-                prior_nodes = set(ctx.tree.nodes.keys())
-                try:
-                    self._execute_code_in_context(code, ctx)
-                except Exception as exc2:
-                    raise RuntimeError(f"Generated code execution failed: {exc2}") from exc2
-            else:
-                raise RuntimeError(f"Generated code execution failed: {exc}") from exc
+        self._execute_code_in_context(code, ctx)
+
+        # try:
+        #     self._execute_code_in_context(code, ctx)
+        # except Exception as exc:
+        #     import httpx
+        #     if kernel_call_fn is not None and isinstance(exc, (httpx.ConnectTimeout, httpx.ConnectError, httpx.TimeoutException)):
+        #         # Kernel unreachable — fall back to in-process and re-run
+        #         ctx = RuntimeContext()
+        #         ctx.tree = deepcopy(tree_state)
+        #         ctx._sync_counters()
+        #         prior_nodes = set(ctx.tree.nodes.keys())
+        #         try:
+        #             self._execute_code_in_context(code, ctx)
+        #         except Exception as exc2:
+        #             raise RuntimeError(f"Generated code execution failed: {exc2}") from exc2
+        #     else:
+        #         raise RuntimeError(f"Generated code execution failed: {exc}") from exc
 
         operations: list[OperationExecution] = []
         for node_id, node in ctx.tree.nodes.items():

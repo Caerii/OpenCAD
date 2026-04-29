@@ -257,12 +257,11 @@ class OpenCadPlanner:
             )
 
         return (
-            '"""Generated OpenCAD example: simple extruded part."""\n\n'
-            "from opencad import Part, Sketch\n\n\n"
-            "part_profile = (\n"
-            '    Sketch(name="Generated Profile")\n'
-            "    .rect(30, 20)\n"
-            "    .circle(4, center=(15, 10), subtract=True)\n"
-            ")\n\n"
-            'Part(name="Generated Part").extrude(part_profile, depth=8, name="Part Body")\n'
+            '"""Smoke test: rectangle with circular hole."""\n'
+            "from opencad import Part, Sketch\n\n"
+            'rect_profile = Sketch(name="Outer").rect(30, 20)\n'
+            'hole_profile = Sketch(name="Hole").circle(4, center=(15, 10))\n\n'
+            'slab = Part(name="Slab").extrude(rect_profile, depth=8, name="Slab Body")\n'
+            'hole = Part(name="Hole").extrude(hole_profile, depth=8, name="Hole Body")\n'
+            'final = slab.cut(hole, name="Final Part")\n'
         )

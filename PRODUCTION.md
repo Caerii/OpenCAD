@@ -77,10 +77,7 @@ This is an open research question and contribution opportunity.
 ```bash
 pytest
 
-curl -s http://127.0.0.1:8000/healthz
-curl -s http://127.0.0.1:8001/healthz
-curl -s http://127.0.0.1:8002/healthz
-curl -s http://127.0.0.1:8003/healthz
+
 ```
 
 ## 4 – Viewport Validation (manual)

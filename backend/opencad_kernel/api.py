@@ -28,9 +28,8 @@ router = APIRouter()
 
 # ── Backend selection ───────────────────────────────────────────────
 
-_BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "analytic")
-# _BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "occt")
-
+# _BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "analytic")
+_BACKEND_NAME = os.environ.get("OPENCAD_KERNEL_BACKEND", "occt")
 
 
 def _build_kernel() -> OpenCadKernel:

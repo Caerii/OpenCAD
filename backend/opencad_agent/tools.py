@@ -20,7 +20,9 @@ def _call_kernel(operation: str, params: dict[str, Any]) -> dict[str, Any]:
     """Call the kernel service over HTTP and return the response dict."""
     import httpx
 
-    url = f"{_KERNEL_URL}/operations/{operation}"
+    # This is a temp fix as it is hardcoded and could cause
+    # breaking changes in the future
+    url = f"{_KERNEL_URL}/kernel/operations/{operation}"
     response = httpx.post(url, json={"payload": params}, timeout=30.0)
     response.raise_for_status()
     return response.json()
