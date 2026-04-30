@@ -232,34 +232,35 @@ class OpenCadPlanner:
                 "bracket = plate.cut(h1).cut(h2).cut(h3).cut(h4).cut(center)\n"
             )
 
-        return (
-    '"""PCB carrier plate with mounting holes and cable passthrough."""\n'
-    "from opencad import Part, Sketch\n\n"
-    # Outer plate: 90x60, 3mm thick
-    'plate = Part(name="Carrier Plate").extrude(\n'
-    '    Sketch(name="Carrier Outline").rect(90, 60),\n'
-    '    depth=3, name="Carrier Plate Body",\n'
-    ")\n\n"
-    # Four 2.2mm mounting holes at corners (4.4mm dia)\n'
-    'm1 = Part(name="Mount BL").extrude(Sketch(name="MBL").circle(2.2, center=(8, 8)), depth=3, name="MBL Body")\n'
-    'm2 = Part(name="Mount BR").extrude(Sketch(name="MBR").circle(2.2, center=(82, 8)), depth=3, name="MBR Body")\n'
-    'm3 = Part(name="Mount TL").extrude(Sketch(name="MTL").circle(2.2, center=(8, 52)), depth=3, name="MTL Body")\n'
-    'm4 = Part(name="Mount TR").extrude(Sketch(name="MTR").circle(2.2, center=(82, 52)), depth=3, name="MTR Body")\n\n'
-    # Center 7mm cable passthrough (14mm dia)\n'
-    'passthrough = Part(name="Cable Passthrough").extrude(\n'
-    '    Sketch(name="Passthrough Profile").circle(7, center=(45, 30)),\n'
-    '    depth=3, name="Passthrough Body",\n'
-    ")\n\n"
-    # Cut all holes, then offset for reinforcement\n'
-    'carrier = (\n'
-    '    plate.cut(m1, name="Cut Mount BL")\n'
-    '         .cut(m2, name="Cut Mount BR")\n'
-    '         .cut(m3, name="Cut Mount TL")\n'
-    '         .cut(m4, name="Cut Mount TR")\n'
-    '         .cut(passthrough, name="Cut Passthrough")\n'
-    '         .offset(0.4, name="Carrier Reinforcement")\n'
-    ")\n"
-)
+        if "pcb" in lowered or "carrier" in lowered:
+            return (
+                '"""PCB carrier plate with mounting holes and cable passthrough."""\n'
+                "from opencad import Part, Sketch\n\n"
+                # Outer plate: 90x60, 3mm thick
+                'plate = Part(name="Carrier Plate").extrude(\n'
+                '    Sketch(name="Carrier Outline").rect(90, 60),\n'
+                '    depth=3, name="Carrier Plate Body",\n'
+                ")\n\n"
+                # Four 2.2mm mounting holes at corners (4.4mm dia)\n'
+                'm1 = Part(name="Mount BL").extrude(Sketch(name="MBL").circle(2.2, center=(8, 8)), depth=3, name="MBL Body")\n'
+                'm2 = Part(name="Mount BR").extrude(Sketch(name="MBR").circle(2.2, center=(82, 8)), depth=3, name="MBR Body")\n'
+                'm3 = Part(name="Mount TL").extrude(Sketch(name="MTL").circle(2.2, center=(8, 52)), depth=3, name="MTL Body")\n'
+                'm4 = Part(name="Mount TR").extrude(Sketch(name="MTR").circle(2.2, center=(82, 52)), depth=3, name="MTR Body")\n\n'
+                # Center 7mm cable passthrough (14mm dia)\n'
+                'passthrough = Part(name="Cable Passthrough").extrude(\n'
+                '    Sketch(name="Passthrough Profile").circle(7, center=(45, 30)),\n'
+                '    depth=3, name="Passthrough Body",\n'
+                ")\n\n"
+                # Cut all holes, then offset for reinforcement\n'
+                "carrier = (\n"
+                '    plate.cut(m1, name="Cut Mount BL")\n'
+                '         .cut(m2, name="Cut Mount BR")\n'
+                '         .cut(m3, name="Cut Mount TL")\n'
+                '         .cut(m4, name="Cut Mount TR")\n'
+                '         .cut(passthrough, name="Cut Passthrough")\n'
+                '         .offset(0.4, name="Carrier Reinforcement")\n'
+                ")\n"
+            )
 
         return (
             '"""Smoke test: rectangle with circular hole."""\n'
