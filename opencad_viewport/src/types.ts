@@ -37,6 +37,16 @@ export interface FeatureTreeView {
   revision: number;
 }
 
+export function createEmptyTree(): FeatureTreeView {
+  return {
+    root_id: "root",
+    active_branch: "main",
+    revision: 0,
+    nodes: {
+    },
+  };
+}
+
 export interface MeshPayload {
   shapeId: string;
   vertices: number[] | Float32Array;
@@ -82,6 +92,10 @@ export interface SketchConstraint {
 export interface SketchPayload {
   entities: Record<string, SketchEntity>;
   constraints: SketchConstraint[];
+}
+
+export function createEmptySketch(): SketchPayload {
+  return { entities: {}, constraints: [] };
 }
 
 export interface SolverResult {

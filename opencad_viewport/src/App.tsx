@@ -4,7 +4,8 @@ import { ChatPanel } from "./components/ChatPanel";
 import { FeatureTreePanel } from "./components/FeatureTreePanel";
 import { SketchEditor } from "./components/SketchEditor";
 import { Viewport3D } from "./components/Viewport3D";
-import { mockFeatureTree, mockMeshes, mockSketch } from "./mock/mockData";
+import { mockMeshes } from "./mock/mockData";
+import { createEmptyTree, createEmptySketch } from "./types";
 import type { ChatOperationExecution, FeatureNodeView, FeatureTreeView, MeshPayload, SketchPayload } from "./types";
 
 const FALLBACK_MESH_Y_OFFSET_SCALE = 0.35;
@@ -56,9 +57,9 @@ function createFallbackMesh(node: FeatureNodeView, index: number): MeshPayload {
 
 export default function App(): JSX.Element {
   const api = useMemo(() => new OpenCadApiClient(), []);
-  const [tree, setTree] = useState<FeatureTreeView>(mockFeatureTree);
-  const [meshes, setMeshes] = useState<MeshPayload[]>(mockMeshes);
-  const [sketch, setSketch] = useState<SketchPayload>(mockSketch);
+  const [tree, setTree] = useState<FeatureTreeView>(createEmptyTree);
+  const [meshes, setMeshes] = useState<MeshPayload[]>([]);
+  const [sketch, setSketch] = useState<SketchPayload>(createEmptySketch);
   const [selectedNodeId, setSelectedNodeId] = useState<string>(tree.root_id);
 
   const selectedShapeId = tree.nodes[selectedNodeId]?.shape_id ?? null;
