@@ -53,11 +53,6 @@ uv sync --extra full
 Each service runs on its own port:
 
 ```bash
-# uv run --no-sync python -m uvicorn opencad_kernel.api:app --reload --port 8000   # 1 – Kernel
-# uv run --no-sync python -m uvicorn opencad_solver.api:app --reload --port 8001   # 2 – Solver
-# uv run --no-sync python -m uvicorn opencad_tree.api:app   --reload --port 8002   # 3 – Tree
-# uv run --no-sync python -m uvicorn opencad_agent.api:app  --reload --port 8003   # 5 – Agent
-
 cd backend
 uv run --no-sync python -m uvicorn api:app --reload --port 8000
 ```
@@ -89,10 +84,10 @@ BACKEND_HOST=0.0.0.0 BACKEND_PORT=8000 FRONTEND_HOST=0.0.0.0 FRONTEND_PORT=5173 
 ### 3. Check health
 
 ```bash
-curl -s http://127.0.0.1:8000/healthz   # → {"status":"ok"}
-curl -s http://127.0.0.1:8001/healthz
-curl -s http://127.0.0.1:8002/healthz
-curl -s http://127.0.0.1:8003/healthz
+curl -s http://127.0.0.1:8000/kernel/healthz   # → {"status":"ok"}
+curl -s http://127.0.0.1:8000/agent/healthz
+curl -s http://127.0.0.1:8000/solver/healthz
+curl -s http://127.0.0.1:8000/tree/healthz
 ```
 
 ### 4. Start the frontend
