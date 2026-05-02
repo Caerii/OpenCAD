@@ -124,11 +124,10 @@ class OpenCadAgentService:
             reset_default_context()
 
     def _generate_code(self, request: ChatRequest) -> str:
-        provider = request.llm_provider or os.environ.get("OPENCAD_LLM_PROVIDER")
-        model = request.llm_model or os.environ.get("OPENCAD_LLM_MODEL")
+        model = os.environ.get("OPENCAD_LLM_MODEL")
+
         if model:
             return self.llm_client.generate_code(
-                provider=provider,
                 model=model,
                 system_prompt=build_code_generation_prompt(request.tree_state),
                 user_message=request.message,
