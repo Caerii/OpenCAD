@@ -102,6 +102,47 @@ The viewport uses **mock geometry/solver data** by default (no backend required 
 Chat targets the live agent service by default; set `VITE_USE_CHAT_MOCK=true` if you explicitly want mocked chat output.
 Set `VITE_USE_MOCK=false` to connect the rest of the viewport to the live services above.
 
+### 5. Run with Docker
+
+Build the backend image from the repository root so Docker can see the Python
+project metadata and backend package files:
+
+```bash
+docker build -f backend/Dockerfile -t opencad-backend .
+```
+
+Build the frontend image from the viewport directory:
+
+```bash
+docker build -f opencad_viewport/Dockerfile -t opencad-frontend opencad_viewport
+```
+
+Run the backend API on port `8000`:
+
+```bash
+docker run --rm -p 8000:8000 opencad-backend
+```
+
+Run the frontend on port `5173`:
+
+```bash
+docker run --rm -p 5173:80 opencad-frontend
+```
+
+By default, the frontend image is built with `VITE_BASE_URL=http://localhost:8000`
+and live API calls enabled. To point the frontend at another API URL or enable
+mock mode, pass build args:
+
+```bash
+docker build \
+  -f opencad_viewport/Dockerfile \
+  -t opencad-frontend \
+  --build-arg VITE_BASE_URL=http://localhost:8000 \
+  --build-arg VITE_USE_MOCK=false \
+  --build-arg VITE_USE_CHAT_MOCK=false \
+  opencad_viewport
+```
+
 ## Configuration
 
 Runtime defaults are documented in `.env.example`.
