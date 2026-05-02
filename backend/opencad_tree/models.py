@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 NodeStatus = Literal["pending", "built", "failed", "stale", "suppressed"]
 ParameterType = Literal["int", "float", "bool", "string", "shape_ref", "json"]
@@ -31,13 +31,21 @@ class FeatureNode(BaseModel):
     typed_parameters: dict[str, TypedParameter] = Field(default_factory=dict)
     parameter_bindings: list[ParameterBinding] = Field(default_factory=list)
     sketch_id: str | None = None
-    depends_on: list[str] = Field(default_factory=list)
+    parent_id: str | None = None                                    # NEW
+    tool_refs: list[str] = Field(default_factory=list)              # NEW
     shape_id: str | None = None
     status: NodeStatus = "pending"
     suppressed: bool = False
-    # Assembly mate metadata (Phase 1)
-    mate_id: str | None = None  # links to kernel MateStore entry
-    is_assembly_mate: bool = False  # convenience flag for tree traversal
+    mate_id: str | None = None
+    is_assembly_mate: bool = False
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def depends_on(self) -> list[str]:
+        """Back-compat: derived from parent_id + tool_refs."""
+        if self.parent_id is None:
+            return list(self.tool_refs)
+        return [self.parent_id, *self.tool_refs]
 
 
 class FeatureTree(BaseModel):

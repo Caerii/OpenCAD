@@ -32,15 +32,14 @@ export function FeatureTreePanel({ tree, selectedNodeId, onSelectNode }: Feature
     const rootCandidates: string[] = [];
 
     Object.entries(tree.nodes).forEach(([nodeId, node]) => {
-      if (node.depends_on.length === 0) {
+      if (!node.parent_id) {
         rootCandidates.push(nodeId);
-      }
-      node.depends_on.forEach((parentId) => {
-        if (!children[parentId]) {
-          children[parentId] = [];
+      } else {
+        if (!children[node.parent_id]) {
+          children[node.parent_id] = [];
         }
-        children[parentId].push(nodeId);
-      });
+        children[node.parent_id].push(nodeId);
+      }
     });
 
     Object.values(children).forEach((ids) => ids.sort());
@@ -65,7 +64,8 @@ export function FeatureTreePanel({ tree, selectedNodeId, onSelectNode }: Feature
         return;
       }
       toExpand.add(nodeId);
-      tree.nodes[nodeId].depends_on.forEach(visit);
+      const parentId = tree.nodes[nodeId].parent_id;
+      if (parentId) visit(parentId);
     };
 
     visit(selectedNodeId);

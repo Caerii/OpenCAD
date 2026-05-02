@@ -66,17 +66,26 @@ class RuntimeContext:
                     self._sketch_counter = max(self._sketch_counter, int(tail) + 1)
 
     def execute_operation(
-        self,
-        operation: str,
-        payload: dict[str, Any],
-        *,
-        feature_name: str,
-        depends_on: list[str] | None = None,
-        tree_parameters: dict[str, Any] | None = None,
-        feature_id: str | None = None,
-    ) -> tuple[str, str]:
+    self,
+    operation: str,
+    payload: dict[str, Any],
+    *,
+    feature_name: str,
+    parent_id: str | None = None,
+    tool_refs: list[str] | None = None,
+    tree_parameters: dict[str, Any] | None = None,
+    feature_id: str | None = None,
+    depends_on: list[str] | None = None,  # back-compat shim
+) -> tuple[str, str]:
         """Execute a kernel operation and append a built feature node."""
-        depends = depends_on or []
+        # Migration shim: if a caller still passes depends_on, derive roles
+        # positionally — first entry is the lineage parent, rest are tool refs.
+        if depends_on is not None and parent_id is None and tool_refs is None:
+            parent_id = depends_on[0] if depends_on else None
+            tool_refs = list(depends_on[1:])
+    
+        tool_refs = tool_refs or []
+    
         if self._external_kernel_call is not None:
             response = self._external_kernel_call(operation, payload)
         else:
@@ -86,18 +95,19 @@ class RuntimeContext:
         shape_id = response.get("shape_id")
         if not shape_id:
             raise RuntimeError(f"Operation '{operation}' returned no shape_id.")
-
+    
         node_id = feature_id
         if node_id is None:
             node_id = self._new_sketch_id() if operation == "create_sketch" else self._new_feature_id()
-
+    
         params = dict(tree_parameters) if tree_parameters is not None else dict(payload)
         node = FeatureNode(
             id=node_id,
             name=feature_name,
             operation=operation,
             parameters=params,
-            depends_on=depends,
+            parent_id=parent_id,
+            tool_refs=tool_refs,
             shape_id=str(shape_id),
             status="built",
             sketch_id=node_id if operation == "create_sketch" else None,
