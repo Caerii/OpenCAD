@@ -20,12 +20,6 @@ def _default_completion(**kwargs: Any) -> Any:
     return completion(**kwargs)
 
 
-def _resolve_model_name(provider: str | None, model: str) -> str:
-    if provider and "/" not in model:
-        return f"{provider}/{model}"
-    return model
-
-
 def _strip_code_fences(code: str) -> str:
     code = code.strip()
     if code.startswith("```python"):
@@ -68,7 +62,6 @@ class LiteLlmProvider:
     def generate_code(
         self,
         *,
-        provider: str | None,
         model: str,
         system_prompt: str,
         user_message: str,
@@ -79,9 +72,10 @@ class LiteLlmProvider:
         messages.extend({"role": item.role, "content": item.content} for item in conversation_history)
         messages.append({"role": "user", "content": user_message})
         response = self._completion(
-            model=_resolve_model_name(provider, model),
+            model=model,
             messages=messages,
             temperature=HIGH_REASONING_CODE_TEMPERATURE if reasoning else DEFAULT_CODE_TEMPERATURE,
         )
         logger.debug("Received LLM code-generation response")
-        return _strip_code_fences(_extract_message_content(response))
+        cleaned_response = _strip_code_fences(_extract_message_content(response))
+        return cleaned_response
