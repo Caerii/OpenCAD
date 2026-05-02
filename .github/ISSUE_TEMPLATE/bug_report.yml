@@ -1,0 +1,88 @@
+name: Bug Report
+description: Report a bug in OpenCAD
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out the sections below.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      description: Which service/area is this bug in?
+      options:
+        - Geometry kernel (OCCT backend)
+        - Constraint solver
+        - Feature tree
+        - 3D viewport (React + Three.js)
+        - AI chat agent
+        - Compiler / IR pipeline
+        - Mesh-to-CAD reconstruction
+        - Build / tooling / infra
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: When I do X, Y happens instead of Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal repro. Include input files (PLY/STL/OBJ/STEP) or scripts where relevant.
+      placeholder: |
+        1. Load `cube.stl`
+        2. Run reconstruction with `--tier=mechanical`
+        3. Observe Hausdorff p95 exceeds threshold
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: OpenCAD version / commit SHA
+      placeholder: v0.x.x or git SHA
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running OpenCAD?
+      options:
+        - Self-hosted (local dev)
+        - Self-hosted (Docker)
+        - Self-hosted (other)
+        - Hosted instance
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser (if viewport bug), Node/Python versions, OCCT version.
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack traces
+      render: shell
