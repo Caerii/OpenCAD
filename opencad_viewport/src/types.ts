@@ -24,6 +24,8 @@ export interface FeatureNodeView {
   typed_parameters: Record<string, TypedParameter>;
   parameter_bindings: ParameterBinding[];
   sketch_id?: string | null;
+  parent_id: string | null;
+  tool_refs: string[];
   depends_on: string[];
   shape_id?: string | null;
   status: FeatureNodeStatus;

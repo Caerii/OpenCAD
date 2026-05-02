@@ -27,19 +27,28 @@ class Part:
         return self.feature_id, self.shape_id
 
     def _apply(
-        self,
-        operation: str,
-        payload: dict,
-        *,
-        feature_name: str,
-        depends_on: list[str],
-        tree_parameters: dict | None = None,
-    ) -> Self:
+    self,
+    operation: str,
+    payload: dict,
+    *,
+    feature_name: str,
+    parent_id: str | None = None,
+    tool_refs: list[str] | None = None,
+    tree_parameters: dict | None = None,
+    # back-compat shim during migration:
+    depends_on: list[str] | None = None,
+) -> Self:
+        # If a caller still passes depends_on, treat first as parent, rest as tools.
+        if depends_on is not None and parent_id is None and tool_refs is None:
+            parent_id = depends_on[0] if depends_on else None
+            tool_refs = list(depends_on[1:])
+    
         feature_id, shape_id = self._context.execute_operation(
             operation,
             payload,
             feature_name=feature_name,
-            depends_on=depends_on,
+            parent_id=parent_id,
+            tool_refs=tool_refs or [],
             tree_parameters=tree_parameters,
         )
         self.feature_id = feature_id
@@ -116,7 +125,8 @@ class Part:
             "boolean_cut",
             {"shape_a_id": left_shape, "shape_b_id": right_shape},
             feature_name=name,
-            depends_on=[left_feature, right_feature],
+            parent_id=left_feature,        # target → lineage
+            tool_refs=[right_feature],     # tool → reference only
             tree_parameters={"shape_a_id": left_feature, "shape_b_id": right_feature},
         )
 
