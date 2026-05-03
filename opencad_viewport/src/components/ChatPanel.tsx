@@ -17,7 +17,7 @@ export function ChatPanel({ onSend }: ChatPanelProps): JSX.Element {
   const [operations, setOperations] = useState<ChatOperationExecution[]>([]);
   const [input, setInput] = useState("");
   const [reasoning, setReasoning] = useState(false);
-  const [generateCode, setGenerateCode] = useState(false);
+  const [generateCode, setGenerateCode] = useState(true);
   const [pending, setPending] = useState(false);
 
   const submit = async () => {
